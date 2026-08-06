@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 export default function Hero() {
     return (
         <section className="max-w-7xl mx-auto px-6">
@@ -40,7 +41,15 @@ export default function Hero() {
                     </div>
 
                     
-                    <div>
+                    <div className="flex justify-center items-center">
+                         <Image
+                         src="/hero.png"
+                         alt="Elvoret Dashboard"
+                         width={700}
+                         height={500}
+                         className="w-full max-w-2xl"
+                         priority/>
+
 
                     </div>
 
