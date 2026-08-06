@@ -28,7 +28,6 @@ export default function Hero() {
                             real-world projects, and the latest tech insights.
                         </p>
                         <div className="mt-8 flex items-center gap-4">
-                            <button>
                                 <Link href="/articles"className="rounded-xl bg-purple-700 px-6 py-3 text-white font-semibold shadow-lg hover:bg-purple-800 transition-colors duration-200">
                                 Explore Articles →
                                 </Link>
@@ -36,7 +35,6 @@ export default function Hero() {
                                 <Link href="/tools" className="rounded-xl border border-gray-300 bg-white px-6 py-3 font-semibold text-gray-900 hover:border-purple-700 hover:text-purple-700 transition-colors duration-200">
                                 Explore AI Tools
                                 </Link>
-                            </button>
                         </div>
 
                     </div>
