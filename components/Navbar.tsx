@@ -26,7 +26,6 @@ export default function Navbar(){
                     {navItems.map((item)=>(<Link key={item.name} href={item.href} className="hover:text-purple-700 transition-colors duration-200">
                     {item.name}
                     </Link>))}
-                    Links
                 </div>
                 <div>
                     Search

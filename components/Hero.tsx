@@ -7,6 +7,15 @@ export default function Hero(){
                         <span className="text-sm font-medium text-purple-800">
                             Elevate Your Tommorow
                         </span>
+                        <h1 className="mt-6 text-6xl font-extrabold leading-tight text-gray-900">
+                            Everything a
+                            <br/>
+                            <span className="text-purple-700">
+                            Software Engineer
+                            </span>
+                            <br/>
+                            Needs
+                        </h1>
 
                     </div>
                     <div>
