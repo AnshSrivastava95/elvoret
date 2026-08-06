@@ -2,6 +2,14 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function Navbar(){
+    const navItems=[
+        "Articles",
+        "AI",
+        "System Design",
+        "Tools",
+        "News",
+    ]
+  
     return(
         <nav>
             <div className="max-w-7x1 mx-auto flex justify-between items-center h-16 px-6">
@@ -14,7 +22,10 @@ export default function Navbar(){
 
                     </Link>
                 </div>
-                <div>
+                <div className="flex gap-8">
+                    {navItems.map((item)=>(<Link key={item} href="#">
+                    {item}
+                    </Link>))}
                     Links
                 </div>
                 <div>
