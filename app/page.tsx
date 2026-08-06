@@ -1,5 +1,9 @@
+import Navbar from "@/components/Navbar";
+
 export default function Home(){
   return(
-    <h1>Hello Elvoret</h1>
+    <div>
+      <Navbar />
+    </div>
   );
 }
