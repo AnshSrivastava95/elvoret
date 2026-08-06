@@ -22,6 +22,10 @@ export default function Hero() {
                             <br />
                             Needs
                         </h1>
+                        <p className="mt-6 max-w-xl text-lg leading-8 text-gray-600">
+                            Learn, build, and grow with in-depth articles, AI tools,
+                            real-world projects, and the latest tech insights.
+                        </p>
 
                     </div>
 
