@@ -1,4 +1,4 @@
-import link from "next/link";
+import Link from "next/link";
 import Image from "next/image";
 
 export default function Navbar(){
@@ -6,10 +6,10 @@ export default function Navbar(){
         <nav>
             <div className="max-w-7x1 mx-auto flex justify-between items-center h-16">
                 <div>
-                    <link href="/">
+                    <Link href="/">
                     <Image src="/logo.png" alt="Elvoret Logo" width={40} height={40} />
 
-                    </link>
+                    </Link>
                 </div>
                 <div>
                     Links
