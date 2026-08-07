@@ -7,7 +7,7 @@ export default function Hero() {
             <div className="min-h-[72vh] flex items-center">
                 <div className="flex items-center justify-between gap-4 w-full">
                     <div className="basis-[45%]">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2">
+                        <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-1">
                             <span className="text-sm font-medium text-purple-800">
                                 Elevate Your Tomorrow.
                             </span>
