@@ -70,8 +70,8 @@ export default function Hero() {
                             <Image
                                 src="/hero.png"
                                 alt="Elvoret Dashboard"
-                                width={1300}
-                                height={900}
+                                width={1200}
+                                height={850}
                                 className="w-full rounded-2xl"
                                 priority
                             />
