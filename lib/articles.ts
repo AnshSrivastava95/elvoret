@@ -23,7 +23,7 @@ export function getAllArticles(): Article[] {
   const fileNames = fs.readdirSync(contentDirectory);
 
   const articles = fileNames.map((fileName) => {
-    const slug = fileName.replace(/\.md$/, "");
+    const slug = fileName.replace(/\.mdx$/, "");
 
     const fullPath = path.join(contentDirectory, fileName);
     const fileContents = fs.readFileSync(fullPath, "utf8");
@@ -50,7 +50,7 @@ export function getAllArticles(): Article[] {
 }
 
 export async function getArticleBySlug(slug: string) {
-  const fullPath = path.join(contentDirectory, `${slug}.md`);
+  const fullPath = path.join(contentDirectory, `${slug}.mdx`);
 
   const fileContents = fs.readFileSync(fullPath, "utf8");
 
