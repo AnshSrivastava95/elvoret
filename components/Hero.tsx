@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 export default function Hero() {
     return (
-        <section className="max-w-7xl mx-auto px-6">
+        <section className="max-w-7xl mx-auto px-6 pt-16">
             <div className="min-h-[80vh] flex items-center">
                 <div className="flex justify-between items-center w-full">
                     <div>
