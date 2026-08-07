@@ -14,8 +14,8 @@ export default function ArticlesPage(){
                     <ArticleHero />
                     <SearchBar />
                     <CategoryCards />
-                    <AdBanner/>
                     <FeaturedArticle/>
+                    <AdBanner/>
                 </main>
                 <aside className="w-[320px] shrink-0">
 
