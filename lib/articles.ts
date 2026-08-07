@@ -11,7 +11,7 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeStringify from "rehype-stringify";
 
 import { visit } from "unist-util-visit";
-import { toRehype } from "remark-rehype";
+import remarkRehype from "remark-rehype";
 
 const contentDirectory = path.join(process.cwd(), "content");
 
@@ -79,7 +79,7 @@ export async function getArticleBySlug(slug: string) {
         if (!node.lang) node.lang = "text";
       });
     })
-    .use(toRehype)
+    .use(remarkRehype)
     .use(rehypeSlug)
     .use(rehypeAutolinkHeadings, {
       behavior: "append",
