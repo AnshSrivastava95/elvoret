@@ -2,7 +2,7 @@ export default function ArticleHero(){
     return(
         <section className="max-w-[1440px] mx-auto px-6 py-16">
             <div>
-                <div className="flex flex-xol">
+                <div className="flex flex-col">
                     <div className="inline-flex items-center gap-2 self-start rounded-full bg-purple-100 px-4 py-2">
                         <span className="text-sm font-medium text-purple-800">
                             Explore our Knowledge Base
