@@ -9,7 +9,7 @@ export default function FeaturedArticle() {
             
                 <div className="relative h-[420px]">
                     <Image
-                        src="/featured.png"
+                        src="/feautred.png"
                         alt="Featured Article"
                         fill
                         className="object-cover"
