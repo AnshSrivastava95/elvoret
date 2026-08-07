@@ -7,29 +7,33 @@ type Props = {
 
 export default function ArticleHero({ article }: Props) {
   return (
-    <section className="mx-auto max-w-5xl px-6 pt-16 pb-12">
+    <section className="mx-auto max-w-5xl px-5 pt-10 pb-8 sm:px-6 lg:px-8 lg:pt-16 lg:pb-12">
 
       {/* Category */}
-      <div className="mb-6">
-        <span className="inline-flex rounded-full bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-700">
+
+      <div className="mb-5">
+        <span className="inline-flex rounded-full bg-purple-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-purple-700 sm:text-sm">
           {article.category}
         </span>
       </div>
 
       {/* Title */}
-      <h1 className="max-w-4xl text-4xl font-extrabold leading-tight tracking-tight text-gray-900 md:text-5xl lg:text-6xl">
+
+      <h1 className="max-w-4xl text-3xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-4xl lg:text-6xl">
         {article.title}
       </h1>
 
       {/* Description */}
-      <p className="mt-6 max-w-3xl text-lg leading-8 text-gray-600 md:text-xl">
+
+      <p className="mt-6 max-w-3xl text-base leading-8 text-gray-600 sm:text-lg lg:text-xl">
         {article.description}
       </p>
 
       {/* Meta */}
-      <div className="mt-8 flex flex-wrap items-center gap-3 text-sm text-gray-500 md:text-base">
 
-        <span className="font-medium text-gray-700">
+      <div className="mt-8 flex flex-wrap items-center gap-3 text-sm text-gray-500">
+
+        <span className="font-medium text-gray-900">
           {article.author}
         </span>
 
@@ -44,7 +48,8 @@ export default function ArticleHero({ article }: Props) {
       </div>
 
       {/* Featured Image */}
-      <div className="relative mt-12 aspect-[16/9] overflow-hidden rounded-3xl border border-gray-200 shadow-sm">
+
+      <div className="relative mt-10 aspect-[16/9] overflow-hidden rounded-3xl border border-gray-200 shadow-sm sm:mt-12">
 
         <Image
           src={article.image}
