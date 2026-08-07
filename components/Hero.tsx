@@ -5,8 +5,8 @@ export default function Hero() {
     return (
         <section className="max-w-7xl mx-auto px-6 pt-6">
             <div className="min-h-[80vh] flex items-center">
-                <div className="flex items-center justify-between gap-16 w-full">
-                    <div className="basis-[45%]">
+                <div className="flex items-center justify-between gap-10 w-full">
+                    <div className="basis-[42%]">
                         <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2">
                             <span className="text-sm font-medium text-purple-800">
                                 Elevate Your Tomorrow.
@@ -65,13 +65,13 @@ export default function Hero() {
                         </div>
                     </div>
 
-                    <div className="basis-[55%] flex justify-center">
+                    <div className="basis-[58%] flex justify-end">
                         <div className="w-full max-w-none rounded-3xl bg-white p-3 shadow-2xl border border-gray-100">
                             <Image
                                 src="/hero.png"
                                 alt="Elvoret Dashboard"
-                                width={1000}
-                                height={700}
+                                width={1200}
+                                height={850}
                                 className="w-full rounded-2xl"
                                 priority
                             />
