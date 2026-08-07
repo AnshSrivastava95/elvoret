@@ -1,4 +1,4 @@
-import { Article } from "@/types/article";
+import { Article } from "@/lib/articles";
 
 type Props = {
   article: Article;
@@ -7,18 +7,18 @@ type Props = {
 export default function ArticleJsonLd({ article }: Props) {
   const jsonLd = {
     "@context": "https://schema.org",
-
     "@type": "Article",
 
     headline: article.title,
 
     description: article.description,
 
-    image: `https://elvoret.in${article.image}`,
+    image: [`https://elvoret.in${article.image}`],
 
     author: {
       "@type": "Person",
       name: article.author,
+      url: "https://elvoret.in/about",
     },
 
     publisher: {
@@ -30,9 +30,8 @@ export default function ArticleJsonLd({ article }: Props) {
       },
     },
 
-    datePublished: article.date,
-
-    dateModified: article.date,
+    datePublished: `${article.date}T09:00:00+05:30`,
+    dateModified: `${article.date}T09:00:00+05:30`,
 
     mainEntityOfPage: {
       "@type": "WebPage",

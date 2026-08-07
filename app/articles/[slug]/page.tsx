@@ -6,137 +6,121 @@ import Footer from "@/components/layout/Footer";
 
 import ArticleHero from "@/components/article/ArticleHero";
 import ArticleContent from "@/components/article/ArticleContent";
-import LatestArticles from "@/components/articles/ArticleGrid";
 import ArticleJsonLd from "@/components/article/ArticleJsonLd";
+import LatestArticles from "@/components/articles/ArticleGrid";
 
-import { articles } from "@/data/article";
+import { getArticleBySlug } from "@/lib/articles";
 
 type Props = {
-    params: Promise<{
-        slug: string;
-    }>;
+  params: Promise<{
+    slug: string;
+  }>;
 };
 
-export async function generateMetadata(
-    { params }: Props
-): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: Props): Promise<Metadata> {
+  const { slug } = await params;
 
-    const { slug } = await params;
-
-    const article = articles.find(
-        (article) => article.slug === slug
-    );
-
-    if (!article) {
-        return {
-            title: "Article Not Found | Elvoret",
-        };
-    }
+  try {
+    const article = await getArticleBySlug(slug);
 
     return {
+      title: `${article.title} | Elvoret`,
 
-        title: `${article.title} | Elvoret`,
+      description: article.description,
+
+      keywords: [
+        article.category,
+        "Redis",
+        "Backend",
+        "Programming",
+        "Software Engineering",
+        "AI",
+        "System Design",
+        "DSA",
+        "Elvoret",
+      ],
+
+      authors: [
+        {
+          name: article.author,
+        },
+      ],
+
+      creator: article.author,
+
+      openGraph: {
+        title: article.title,
 
         description: article.description,
 
-        keywords: [
-            article.category,
-            "Programming",
-            "Software Engineering",
-            "Backend",
-            "AI",
-            "System Design",
-            "DSA",
-            "Elvoret",
+        url: `https://elvoret.in/articles/${article.slug}`,
+
+        siteName: "Elvoret",
+
+        images: [
+          {
+            url: article.image,
+            width: 1200,
+            height: 630,
+            alt: article.title,
+          },
         ],
 
-        authors: [
-            {
-                name: article.author,
-            },
-        ],
+        locale: "en_US",
 
-        creator: article.author,
+        type: "article",
+      },
 
-        openGraph: {
+      twitter: {
+        card: "summary_large_image",
 
-            title: article.title,
+        title: article.title,
 
-            description: article.description,
+        description: article.description,
 
-            url: `https://elvoret.in/articles/${article.slug}`,
+        images: [article.image],
+      },
 
-            siteName: "Elvoret",
-
-            images: [
-                {
-                    url: article.image,
-                    width: 1200,
-                    height: 630,
-                    alt: article.title,
-                },
-            ],
-
-            locale: "en_US",
-
-            type: "article",
-        },
-
-        twitter: {
-
-            card: "summary_large_image",
-
-            title: article.title,
-
-            description: article.description,
-
-            images: [article.image],
-
-        },
-
-        robots: {
-
-            index: true,
-
-            follow: true,
-
-        },
-
+      robots: {
+        index: true,
+        follow: true,
+      },
     };
+  } catch {
+    return {
+      title: "Article Not Found | Elvoret",
+    };
+  }
 }
 
 export default async function ArticlePage({
-    params,
+  params,
 }: Props) {
+  const { slug } = await params;
 
-    const { slug } = await params;
-
-    const article = articles.find(
-        (article) => article.slug === slug
-    );
-
-    if (!article) {
-        notFound();
-    }
+  try {
+    const article = await getArticleBySlug(slug);
 
     return (
-        <>
-            <Navbar />
+      <>
+        <Navbar />
 
-            <ArticleJsonLd article={article} />
+        <ArticleJsonLd article={article} />
 
-            <main>
+        <main>
+          <ArticleHero article={article} />
 
-                <ArticleHero article={article} />
+          <ArticleContent article={article} />
 
-                <ArticleContent article={article} />
+          <LatestArticles />
+        </main>
 
-                <LatestArticles />
-
-            </main>
-
-            <Footer />
-
-        </>
+        <Footer />
+      </>
     );
+  } catch {
+    notFound();
+  }
 }
