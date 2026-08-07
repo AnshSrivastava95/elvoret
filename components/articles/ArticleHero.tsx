@@ -7,10 +7,10 @@ export default function ArticleHero(){
                         <span className="text-sm font-medium text-purple-800">
                             Explore our Knowledge Base
                         </span>
-                        <h1 className="mt-6 text-6xl font-extrabold tracking-tight text-gray-900">
-                            Articles
-                        </h1>
                     </div>
+                    <h1 className="mt-6 text-6xl font-extrabold tracking-tight text-gray-900">
+                            Articles
+                    </h1>
                 </div>
             </div>
         </section>
