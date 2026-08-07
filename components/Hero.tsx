@@ -37,6 +37,24 @@ export default function Hero() {
                                 Explore AI Tools
                                 </Link>
                         </div>
+                        <div className="mt-10">
+                            <div className="flex items-center gap-4">
+                                <div className="flex -space-x-3">
+                                    <div className="h-10 w-10 rounded-full border-2 border-white bg-purple-200"></div>
+                                    <div className="h-10 w-10 rounded-full border-2 border-white bg-purple-300"></div>
+                                    <div className="h-10 w-10 rounded-full border-2 border-white bg-purple-400"></div>
+                                    <div className="h-10 w-10 rounded-full border-2 border-white bg-purple-500"></div>
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-gray-900">
+                                        240+ developers already subscribed
+                                    </p>
+                                    <p className="text-sm text-gray-500">
+                                        Join our growing software engineering community.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
 
