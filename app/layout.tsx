@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
+
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,21 +15,120 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title:{
-    default:"Elvoret - Elevate Your Tomorrow",
+  metadataBase: new URL("https://elvoret.in"),
+
+  title: {
+    default: "Elvoret - Elevate Your Tomorrow",
     template: "%s | Elvoret",
-},
-description:
-    "Learn, build, and grow with in-depth software engineering articles, AI tools, and roadmaps.",
+  },
+
+  description:
+    "Learn, build, and grow with in-depth software engineering articles, AI, Backend Development, DSA, System Design, Frontend, and practical developer roadmaps.",
+
+  keywords: [
+    "Elvoret",
+    "Software Engineering",
+    "Programming",
+    "Backend Development",
+    "Frontend Development",
+    "Artificial Intelligence",
+    "AI",
+    "Machine Learning",
+    "System Design",
+    "Data Structures",
+    "Algorithms",
+    "DSA",
+    "Redis",
+    "Node.js",
+    "Next.js",
+    "React",
+    "JavaScript",
+    "TypeScript",
+    "Career",
+    "Developer Roadmap",
+    "Coding",
+  ],
+
+  authors: [
+    {
+      name: "Ansh Srivastava",
+      url: "https://elvoret.in",
+    },
+  ],
+
+  creator: "Ansh Srivastava",
+
+  publisher: "Elvoret",
+
+  category: "Technology",
+
+  alternates: {
+    canonical: "https://elvoret.in",
+  },
+
+  openGraph: {
+    title: "Elvoret - Elevate Your Tomorrow",
+
+    description:
+      "Practical software engineering tutorials, AI, Backend Development, DSA, System Design, and career guides.",
+
+    url: "https://elvoret.in",
+
+    siteName: "Elvoret",
+
+    locale: "en_US",
+
+    type: "website",
+
+    images: [
+      {
+        url: "/featured.png",
+        width: 1200,
+        height: 630,
+        alt: "Elvoret",
+      },
+    ],
+  },
+
+  twitter: {
+    card: "summary_large_image",
+
+    title: "Elvoret - Elevate Your Tomorrow",
+
+    description:
+      "Practical software engineering tutorials, AI, Backend Development, DSA, System Design, and career guides.",
+
+    images: ["/featured.png"],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
+
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+
+  applicationName: "Elvoret",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}
+      <body className="min-h-screen bg-white font-sans text-gray-900 antialiased">
+        {children}
         <Analytics />
       </body>
     </html>
