@@ -11,6 +11,7 @@ const articles = [
         readTime: "8 min read",
         slug: "redis-explained-simply",
     },
+
     {
         title: "Understanding JWT Authentication",
         description:
@@ -21,6 +22,7 @@ const articles = [
         readTime: "10 min read",
         slug: "jwt-authentication-guide",
     },
+
     {
         title: "Docker for Beginners",
         description:
@@ -35,28 +37,30 @@ const articles = [
 
 export default function ArticleGrid() {
     return (
-        <section className="max-w-[1440px] mx-auto px-6 mt-16">
+        <section className="max-w-[1440px] mx-auto px-6 py-20">
 
             <div className="flex items-center justify-between">
 
                 <div>
-                    <h2 className="text-3xl font-bold text-gray-900">
+
+                    <h2 className="text-4xl font-bold text-gray-900">
                         Latest Articles
                     </h2>
 
-                    <p className="mt-2 text-gray-500">
+                    <p className="mt-2 text-lg text-gray-500">
                         Fresh tutorials, guides and developer resources.
                     </p>
+
                 </div>
 
             </div>
 
-            <div className="mt-10 grid gap-8 md:grid-cols-2 xl:grid-cols-3">
+            <div className="mt-10 grid items-stretch gap-8 md:grid-cols-2 xl:grid-cols-3">
 
                 {articles.map((article) => (
                     <ArticleCard
                         key={article.slug}
-                        {...article}
+                        article={article}
                     />
                 ))}
 
