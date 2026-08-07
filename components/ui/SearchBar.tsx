@@ -1,6 +1,6 @@
 export default function SearchBar() {
     return (
-        <div className="mt-10">
+        <div className="mt-0">
             <div className="relative w-full">
                 <input
                     type="text"
