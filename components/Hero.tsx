@@ -5,7 +5,7 @@ export default function Hero() {
     return (
         <section className="max-w-7xl mx-auto px-6 pt-6">
             <div className="min-h-[80vh] flex items-center">
-                <div className="flex items-center justify-between gap-10 w-full">
+                <div className="flex items-center justify-between gap-6 w-full">
                     <div className="basis-[42%]">
                         <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2">
                             <span className="text-sm font-medium text-purple-800">
@@ -70,8 +70,8 @@ export default function Hero() {
                             <Image
                                 src="/hero.png"
                                 alt="Elvoret Dashboard"
-                                width={1200}
-                                height={850}
+                                width={1300}
+                                height={900}
                                 className="w-full rounded-2xl"
                                 priority
                             />
