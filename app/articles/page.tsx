@@ -8,7 +8,7 @@ export default function ArticlesPage(){
     return(
         <>
         <Navbar />
-        <section className="max-w-[1440px] mx-auto px-6 py-10">
+        <section className="max-w-[1440px] mx-auto px-6 py-8">
             <div className="flex gap-10">
                 <main className="flex-1 min-w-0">
                     <ArticleHero />
