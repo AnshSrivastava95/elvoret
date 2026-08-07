@@ -2,6 +2,7 @@ import ArticleHero from "@/components/articles/ArticleHero";
 import Navbar from "@/components/layout/Navbar";
 import SearchBar from "@/components/ui/SearchBar";
 import CategoryCards from "@/components/articles/CategoryCard";
+import AdBanner from "@/components/articles/AdBanner";
 export default function ArticlesPage(){
     return(
         <>
@@ -12,6 +13,7 @@ export default function ArticlesPage(){
                     <ArticleHero />
                     <SearchBar />
                     <CategoryCards />
+                    <AdBanner/>
                 </main>
                 <aside className="w-[320px] shrink-0">
 
