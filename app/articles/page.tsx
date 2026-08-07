@@ -5,25 +5,45 @@ import CategoryCards from "@/components/articles/CategoryCard";
 import AdBanner from "@/components/articles/AdBanner";
 import FeaturedArticle from "@/components/articles/FeautredArticle";
 import ArticleGrid from "@/components/articles/ArticleGrid";
-export default function ArticlesPage(){
-    return(
-        <>
-        <Navbar />
-        <section className="max-w-[1440px] mx-auto px-6 py-8">
-            <div className="flex gap-10">
-                <main className="flex-1 min-w-0">
-                    <ArticleHero />
-                    <SearchBar />
-                    <CategoryCards />
-                    <FeaturedArticle/>
-                    <AdBanner/>
-                    <ArticleGrid/>
-                </main>
-                <aside className="w-[320px] shrink-0">
 
-                </aside>
-            </div>
-        </section>
-        </>
-    );
+export default function ArticlesPage() {
+  return (
+    <>
+      <Navbar />
+
+      <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 lg:py-10">
+
+        <div className="flex flex-col gap-10 xl:flex-row">
+
+          {/* Main Content */}
+
+          <main className="min-w-0 flex-1">
+
+            <ArticleHero />
+
+            <SearchBar />
+
+            <CategoryCards />
+
+            <FeaturedArticle />
+
+            <AdBanner />
+
+            <ArticleGrid />
+
+          </main>
+
+          {/* Sidebar (Desktop Only) */}
+
+          <aside className="hidden xl:block xl:w-80 shrink-0">
+
+            {/* Add sidebar widgets here later */}
+
+          </aside>
+
+        </div>
+
+      </section>
+    </>
+  );
 }
