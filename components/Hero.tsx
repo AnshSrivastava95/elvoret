@@ -1,20 +1,18 @@
 import Link from "next/link";
 import Image from "next/image";
+
 export default function Hero() {
     return (
         <section className="max-w-7xl mx-auto px-6 pt-6">
             <div className="min-h-[80vh] flex items-center">
-                <div className="flex justify-between items-center w-full">
-                    <div>
-
-                        
+                <div className="flex items-center justify-between gap-16 w-full">
+                    <div className="basis-[45%]">
                         <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2">
                             <span className="text-sm font-medium text-purple-800">
                                 Elevate Your Tomorrow.
                             </span>
                         </div>
 
-                        
                         <h1 className="mt-6 text-6xl font-extrabold leading-tight text-gray-900">
                             Everything a
                             <br />
@@ -24,19 +22,28 @@ export default function Hero() {
                             <br />
                             Needs
                         </h1>
+
                         <p className="mt-6 max-w-xl text-lg leading-8 text-gray-600">
                             Learn, build, and grow with in-depth articles, AI tools,
                             real-world projects, and the latest tech insights.
                         </p>
-                        <div className="mt-8 flex items-center gap-4">
-                                <Link href="/articles"className="rounded-xl bg-purple-700 px-6 py-3 text-white font-semibold shadow-lg hover:bg-purple-800 transition-colors duration-200">
-                                Explore Articles →
-                                </Link>
 
-                                <Link href="/tools" className="rounded-xl border border-gray-300 bg-white px-6 py-3 font-semibold text-gray-900 hover:border-purple-700 hover:text-purple-700 transition-colors duration-200">
+                        <div className="mt-8 flex items-center gap-4">
+                            <Link
+                                href="/articles"
+                                className="rounded-xl bg-purple-700 px-6 py-3 text-white font-semibold shadow-lg hover:bg-purple-800 transition-colors duration-200"
+                            >
+                                Explore Articles →
+                            </Link>
+
+                            <Link
+                                href="/tools"
+                                className="rounded-xl border border-gray-300 bg-white px-6 py-3 font-semibold text-gray-900 hover:border-purple-700 hover:text-purple-700 transition-colors duration-200"
+                            >
                                 Explore AI Tools
-                                </Link>
+                            </Link>
                         </div>
+
                         <div className="mt-10">
                             <div className="flex items-center gap-4">
                                 <div className="flex -space-x-3">
@@ -45,6 +52,7 @@ export default function Hero() {
                                     <div className="h-10 w-10 rounded-full border-2 border-white bg-purple-400"></div>
                                     <div className="h-10 w-10 rounded-full border-2 border-white bg-purple-500"></div>
                                 </div>
+
                                 <div>
                                     <p className="font-semibold text-gray-900">
                                         240+ developers already subscribed
@@ -55,22 +63,20 @@ export default function Hero() {
                                 </div>
                             </div>
                         </div>
-
                     </div>
 
-                    
-                    <div className="rounded-3xl bg-white p-3 shadow-2xl border border-gray-100">
-                         <Image
-                         src="/hero.png"
-                         alt="Elvoret Dashboard"
-                         width={700}
-                         height={500}
-                         className="w-full rounded-2xl"
-                         priority/>
-
-
+                    <div className="basis-[55%] flex justify-center">
+                        <div className="w-full max-w-4xl rounded-3xl bg-white p-3 shadow-2xl border border-gray-100">
+                            <Image
+                                src="/hero.png"
+                                alt="Elvoret Dashboard"
+                                width={900}
+                                height={650}
+                                className="w-full rounded-2xl"
+                                priority
+                            />
+                        </div>
                     </div>
-
                 </div>
             </div>
         </section>
