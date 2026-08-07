@@ -3,10 +3,10 @@ import Image from "next/image";
 
 export default function Hero() {
     return (
-        <section className="ax-w-[1440px] mx-auto px-6 pt-6">
-            <div className="min-h-[80vh] flex items-center">
-                <div className="flex items-center justify-between gap-6 w-full">
-                    <div className="basis-[42%] -ml-6">
+        <section className="ax-w-[1440px] mx-auto px-6 pt-2">
+            <div className="min-h-[72vh] flex items-center">
+                <div className="flex items-center justify-between gap-4 w-full">
+                    <div className="basis-[40%]">
                         <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-2">
                             <span className="text-sm font-medium text-purple-800">
                                 Elevate Your Tomorrow.
@@ -65,8 +65,8 @@ export default function Hero() {
                         </div>
                     </div>
 
-                    <div className="basis-[58%] flex justify-end mr-6">
-                        <div className="w-full max-w-none rounded-3xl bg-white p-3 shadow-2xl border border-gray-100">
+                    <div className="basis-[60%] flex justify-end">
+                        <div className="w-full max-w-none rounded-3xl bg-white p-2 shadow-2xl border border-gray-100">
                             <Image
                                 src="/hero.png"
                                 alt="Elvoret Dashboard"
