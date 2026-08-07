@@ -6,17 +6,15 @@ export default function FeaturedArticle() {
         <section className="max-w-[1440px] mx-auto px-6 mt-8">
             <div className="grid grid-cols-2 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
 
-                {/* Left Image */}
+            
                 <div className="relative h-[420px]">
                     <Image
-                        src="/featured.jpg"
+                        src="/featured.png"
                         alt="Featured Article"
                         fill
                         className="object-cover"
                     />
                 </div>
-
-                {/* Right Content */}
                 <div className="flex flex-col justify-center p-12">
 
                     <span className="inline-flex w-fit rounded-full bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-700">
