@@ -1,6 +1,6 @@
 export default function ArticleHero(){
     return(
-        <section className="w-full py-5">
+        <section className="w-full py-2">
             <div className="w-full">
                 <div className="flex flex-col">
                     <div className="inline-flex items-center gap-2 self-start rounded-full bg-purple-100 px-4 py-2">
