@@ -11,39 +11,40 @@ export default function FeaturedArticle() {
   if (!article) return null;
 
   return (
-    <section className="mx-auto max-w-7xl px-5 py-10 sm:px-6 lg:px-8 lg:py-16">
-      <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+    <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
 
-        <div className="grid lg:grid-cols-2">
+      <div className="overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-xl">
 
-          {/* Image */}
+        <div className="grid lg:grid-cols-5">
 
-          <div className="relative h-72 sm:h-96 lg:min-h-[520px] bg-gradient-to-br from-[#faf7ff] via-[#f7f3ff] to-[#efe8ff]">
+          {/* IMAGE */}
+
+          <div className="relative h-72 bg-gradient-to-br from-[#faf7ff] via-[#f7f3ff] to-[#efe8ff] sm:h-[420px] lg:col-span-2 lg:h-auto">
 
             <Image
               src={article.image}
               alt={article.title}
               fill
               priority
-              sizes="(max-width:1024px) 100vw, 50vw"
-              className="object-contain p-6 transition-transform duration-500 hover:scale-105"
+              sizes="(max-width:1024px) 100vw, 40vw"
+              className="object-contain p-2 transition-transform duration-500 hover:scale-105 lg:p-4"
             />
 
           </div>
 
-          {/* Content */}
+          {/* CONTENT */}
 
-          <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-14">
+          <div className="flex flex-col justify-center p-6 sm:p-8 lg:col-span-3 lg:p-12">
 
-            <span className="inline-flex w-fit rounded-full bg-purple-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-purple-700 sm:text-sm">
-              ⭐ Featured Article
+            <span className="inline-flex w-fit rounded-full bg-purple-100 px-4 py-2 text-xs font-semibold uppercase tracking-wide text-purple-700">
+              Featured Article
             </span>
 
-            <h2 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-4xl lg:text-5xl">
+            <h2 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-4xl lg:text-[3.25rem]">
               {article.title}
             </h2>
 
-            <p className="mt-5 text-base leading-8 text-gray-600 sm:text-lg">
+            <p className="mt-6 max-w-2xl text-base leading-8 text-gray-600 lg:text-lg">
               {article.description}
             </p>
 
@@ -65,13 +66,10 @@ export default function FeaturedArticle() {
 
             <Link
               href={`/articles/${article.slug}`}
-              className="group mt-8 inline-flex w-fit items-center gap-2 rounded-xl bg-purple-700 px-6 py-3 font-semibold text-white transition-all duration-300 hover:bg-purple-800 hover:shadow-lg"
+              className="mt-8 inline-flex w-fit items-center gap-2 rounded-xl bg-purple-700 px-6 py-3 font-semibold text-white transition-all duration-300 hover:bg-purple-800 hover:shadow-lg"
             >
-              Read Article
+              Read Article →
 
-              <span className="transition-transform duration-300 group-hover:translate-x-1">
-                →
-              </span>
             </Link>
 
           </div>
@@ -79,6 +77,7 @@ export default function FeaturedArticle() {
         </div>
 
       </div>
+
     </section>
   );
 }
