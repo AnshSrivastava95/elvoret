@@ -1,4 +1,4 @@
-import ArticlesHero from "@/components/articles/ArticlesHero";
+import ArticlesHero from "@/components/articles/ArticleHero";
 export default function ArticlesPage(){
     return(
         <main>
