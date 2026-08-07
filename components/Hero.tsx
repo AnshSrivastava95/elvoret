@@ -66,12 +66,12 @@ export default function Hero() {
                     </div>
 
                     <div className="basis-[55%] flex justify-center">
-                        <div className="w-full max-w-4xl rounded-3xl bg-white p-3 shadow-2xl border border-gray-100">
+                        <div className="w-full max-w-none rounded-3xl bg-white p-3 shadow-2xl border border-gray-100">
                             <Image
                                 src="/hero.png"
                                 alt="Elvoret Dashboard"
-                                width={900}
-                                height={650}
+                                width={1000}
+                                height={700}
                                 className="w-full rounded-2xl"
                                 priority
                             />
