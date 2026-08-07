@@ -4,6 +4,7 @@ import SearchBar from "@/components/ui/SearchBar";
 import CategoryCards from "@/components/articles/CategoryCard";
 import AdBanner from "@/components/articles/AdBanner";
 import FeaturedArticle from "@/components/articles/FeautredArticle";
+import ArticleGrid from "@/components/articles/ArticleGrid";
 export default function ArticlesPage(){
     return(
         <>
@@ -16,6 +17,7 @@ export default function ArticlesPage(){
                     <CategoryCards />
                     <FeaturedArticle/>
                     <AdBanner/>
+                    <ArticleGrid/>
                 </main>
                 <aside className="w-[320px] shrink-0">
 
