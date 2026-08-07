@@ -59,13 +59,13 @@ export default function Hero() {
                     </div>
 
                     
-                    <div className="flex justify-center items-center">
+                    <div className="rounded-3xl bg-white p-3 shadow-2xl border border-gray-100">
                          <Image
                          src="/hero.png"
                          alt="Elvoret Dashboard"
                          width={700}
                          height={500}
-                         className="w-full max-w-2xl"
+                         className="w-full rounded-2xl"
                          priority/>
 
 
