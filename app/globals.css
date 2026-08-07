@@ -1,6 +1,7 @@
 @import "tailwindcss";
-
 @plugin "@tailwindcss/typography";
+
+/* ---------- Theme ---------- */
 
 :root {
   --background: #ffffff;
@@ -10,9 +11,12 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
+
+/* ---------- Dark Mode ---------- */
 
 @media (prefers-color-scheme: dark) {
   :root {
@@ -21,8 +25,83 @@
   }
 }
 
+/* ---------- Base ---------- */
+
+html {
+  scroll-behavior: smooth;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ---------- Selection ---------- */
+
+::selection {
+  background: #e9d5ff;
+  color: #111827;
+}
+
+/* ---------- Scrollbar ---------- */
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f3f4f6;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c4b5fd;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a78bfa;
+}
+
+/* ---------- Images ---------- */
+
+img {
+  user-select: none;
+}
+
+/* ---------- Code ---------- */
+
+pre {
+  overflow-x: auto;
+}
+
+code {
+  font-family: var(--font-geist-mono), monospace;
+}
+
+/* ---------- Tables ---------- */
+
+table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+/* ---------- Links ---------- */
+
+a {
+  transition: color 0.2s ease;
+}
+
+/* ---------- Focus ---------- */
+
+:focus-visible {
+  outline: 2px solid #7c3aed;
+  outline-offset: 2px;
 }

@@ -1,8 +1,17 @@
 import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
+
 import { remark } from "remark";
-import html from "remark-html";
+import remarkGfm from "remark-gfm";
+
+import rehypeHighlight from "rehype-highlight";
+import rehypeSlug from "rehype-slug";
+import rehypeAutolinkHeadings from "rehype-autolink-headings";
+import rehypeStringify from "rehype-stringify";
+
+import { visit } from "unist-util-visit";
+import { toRehype } from "remark-rehype";
 
 const contentDirectory = path.join(process.cwd(), "content");
 
@@ -20,12 +29,15 @@ export interface Article {
 }
 
 export function getAllArticles(): Article[] {
-  const fileNames = fs.readdirSync(contentDirectory);
+  const fileNames = fs
+    .readdirSync(contentDirectory)
+    .filter((file) => file.endsWith(".mdx"));
 
   const articles = fileNames.map((fileName) => {
     const slug = fileName.replace(/\.mdx$/, "");
 
     const fullPath = path.join(contentDirectory, fileName);
+
     const fileContents = fs.readFileSync(fullPath, "utf8");
 
     const { data } = matter(fileContents);
@@ -52,15 +64,29 @@ export function getAllArticles(): Article[] {
 export async function getArticleBySlug(slug: string) {
   const fullPath = path.join(contentDirectory, `${slug}.mdx`);
 
+  if (!fs.existsSync(fullPath)) {
+    throw new Error(`Article "${slug}" not found.`);
+  }
+
   const fileContents = fs.readFileSync(fullPath, "utf8");
 
   const { data, content } = matter(fileContents);
 
-  const processedContent = await remark()
-    .use(html)
+  const processed = await remark()
+    .use(remarkGfm)
+    .use(() => (tree) => {
+      visit(tree, "code", (node: any) => {
+        if (!node.lang) node.lang = "text";
+      });
+    })
+    .use(toRehype)
+    .use(rehypeSlug)
+    .use(rehypeAutolinkHeadings, {
+      behavior: "append",
+    })
+    .use(rehypeHighlight)
+    .use(rehypeStringify)
     .process(content);
-
-  const contentHtml = processedContent.toString();
 
   return {
     slug,
@@ -72,6 +98,6 @@ export async function getArticleBySlug(slug: string) {
     image: data.image,
     readTime: data.readTime,
     featured: data.featured ?? false,
-    contentHtml,
+    contentHtml: processed.toString(),
   };
 }
