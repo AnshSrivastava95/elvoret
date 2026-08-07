@@ -11,7 +11,7 @@ const categories = [
 
 export default function CategoryFilters() {
     return (
-        <div className="mt-8 flex flex-wrap gap-3">
+        <div className="mt-6 flex flex-wrap gap-2">
             {categories.map((category, index) => (
                 <button
                     key={category}

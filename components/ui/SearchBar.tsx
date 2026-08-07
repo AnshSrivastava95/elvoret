@@ -1,7 +1,7 @@
 export default function SearchBar() {
     return (
-        <div className="mt-14">
-            <div className="relative w-full max-w-6xl">
+        <div className="mt-10">
+            <div className="relative w-full">
                 <input
                     type="text"
                     placeholder="Search articles, AI, System Design..."

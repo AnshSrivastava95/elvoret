@@ -8,12 +8,12 @@ export default function ArticlesPage(){
         <Navbar />
         <section className="max-w-[1440px] mx-auto px-6 py-16">
             <div className="flex gap-10">
-                <main className="w-[72%]">
+                <main className="flex-1 min-w-0">
                     <ArticleHero />
                     <SearchBar />
                     <CategoryCards />
                 </main>
-                <aside className="w-[28%]">
+                <aside className="w-[320px] shrink-0">
 
                 </aside>
             </div>
