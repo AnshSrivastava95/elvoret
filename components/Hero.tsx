@@ -13,7 +13,7 @@ export default function Hero() {
                             </span>
                         </div>
 
-                        <h1 className="mt-6 text-6xl font-extrabold leading-tight text-gray-900">
+                        <h1 className="mt-6 text-5xl lg:text-[58px] font-extrabold leading-[1.08] text-gray-900">
                             Everything a
                             <br />
                             <span className="text-purple-700">
@@ -23,7 +23,7 @@ export default function Hero() {
                             Needs
                         </h1>
 
-                        <p className="mt-6 max-w-xl text-lg leading-8 text-gray-600">
+                        <p className="mt-6 max-w-lg text-lg leading-8 text-gray-600">
                             Learn, build, and grow with in-depth articles, AI tools,
                             real-world projects, and the latest tech insights.
                         </p>
