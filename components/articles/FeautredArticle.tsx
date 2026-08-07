@@ -4,34 +4,38 @@ import Link from "next/link";
 export default function FeaturedArticle() {
     return (
         <section className="max-w-[1440px] mx-auto px-6 mt-8">
-            <div className="grid grid-cols-2 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm">
+            <div className="grid grid-cols-[1.2fr_1fr] overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-sm hover:shadow-lg transition-shadow duration-300">
 
-            
-                <div className="relative h-[420px]">
+                {/* Left Image */}
+                <div className="relative h-[450px] overflow-hidden">
                     <Image
-                        src="/feautred.png"
-                        alt="Featured Article"
+                        src="/featured.png"
+                        alt="Redis Explained Simply"
                         fill
-                        className="object-cover"
+                        priority
+                        className="object-cover object-center transition-transform duration-500 hover:scale-105"
                     />
                 </div>
+
+                {/* Right Content */}
                 <div className="flex flex-col justify-center p-12">
 
                     <span className="inline-flex w-fit rounded-full bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-700">
                         Featured Article
                     </span>
 
-                    <h2 className="mt-6 text-4xl font-bold text-gray-900 leading-tight">
+                    <h2 className="mt-5 max-w-md text-[44px] font-extrabold leading-tight text-gray-900">
                         Redis Explained Simply
                     </h2>
 
-                    <p className="mt-6 text-lg leading-8 text-gray-600">
-                        Learn how Redis works, why it is one of the fastest
+                    <p className="mt-5 max-w-lg text-lg leading-8 text-gray-600">
+                        Learn how Redis works, why it's one of the fastest
                         databases, and how modern applications use it for
-                        caching, sessions, queues, and real-time performance.
+                        caching, sessions, queues, real-time analytics,
+                        and high-performance applications.
                     </p>
 
-                    <div className="mt-8 flex items-center gap-5 text-sm text-gray-500">
+                    <div className="mt-7 flex items-center gap-4 text-sm text-gray-500">
                         <span>By Ansh Srivastava</span>
                         <span>•</span>
                         <span>August 7, 2026</span>
@@ -41,12 +45,13 @@ export default function FeaturedArticle() {
 
                     <Link
                         href="/articles/redis-explained-simply"
-                        className="mt-10 w-fit rounded-xl bg-purple-700 px-6 py-3 font-semibold text-white transition-colors hover:bg-purple-800"
+                        className="mt-8 w-fit rounded-xl bg-purple-700 px-6 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:bg-purple-800 hover:scale-105"
                     >
                         Read Article →
                     </Link>
 
                 </div>
+
             </div>
         </section>
     );
