@@ -12,38 +12,14 @@ import {
 } from "lucide-react";
 
 const categories = [
-  {
-    name: "All",
-    icon: Sparkles,
-  },
-  {
-    name: "DSA",
-    icon: Code2,
-  },
-  {
-    name: "Backend",
-    icon: Server,
-  },
-  {
-    name: "Frontend",
-    icon: PanelsTopLeft,
-  },
-  {
-    name: "Career",
-    icon: BriefcaseBusiness,
-  },
-  {
-    name: "Databases",
-    icon: Database,
-  },
-  {
-    name: "Cloud",
-    icon: Cloud,
-  },
-  {
-    name: "DevOps",
-    icon: GitBranch,
-  },
+  { name: "All", icon: Sparkles },
+  { name: "DSA", icon: Code2 },
+  { name: "Backend", icon: Server },
+  { name: "Frontend", icon: PanelsTopLeft },
+  { name: "Career", icon: BriefcaseBusiness },
+  { name: "Databases", icon: Database },
+  { name: "Cloud", icon: Cloud },
+  { name: "DevOps", icon: GitBranch },
 ];
 
 export default function CategoryCards() {
@@ -53,10 +29,10 @@ export default function CategoryCards() {
         className="
           flex
           w-full
-          gap-2
+          gap-3
           overflow-x-auto
           pb-2
-          sm:gap-3
+          md:gap-4
           md:overflow-visible
           md:pb-0
         "
@@ -70,24 +46,16 @@ export default function CategoryCards() {
           const isActive = index === 0;
 
           return (
-            /*
-             * Fixed slot.
-             *
-             * The slot NEVER changes width when the button expands.
-             * This prevents the vibration/jitter problem.
-             */
             <div
               key={category.name}
-              className={`
+              className="
                 relative
                 h-11
+                w-11
                 shrink-0
-
-                ${isActive ? "w-20" : "w-11"}
-
                 md:h-12
-                ${isActive ? "md:w-20" : "md:w-12"}
-              `}
+                md:w-12
+              "
             >
               <button
                 type="button"
@@ -97,21 +65,18 @@ export default function CategoryCards() {
                   absolute
                   left-0
                   top-0
-                  z-10
-
+                  z-20
                   flex
                   h-11
                   items-center
                   justify-center
-
                   overflow-hidden
                   rounded-full
                   border
-
-                  transition-[width,padding,background-color,border-color,color,box-shadow]
+                  whitespace-nowrap
+                  transition-[width,padding,background-color,border-color,box-shadow]
                   duration-200
                   ease-out
-
                   md:h-12
 
                   ${
@@ -123,6 +88,7 @@ export default function CategoryCards() {
                         px-4
                         text-white
                         shadow-md
+                        md:w-20
                       `
                       : `
                         w-11
@@ -131,22 +97,18 @@ export default function CategoryCards() {
                         px-0
                         text-gray-700
 
-                        hover:w-auto
-                        hover:min-w-[110px]
+                        hover:w-[120px]
                         hover:border-purple-200
                         hover:bg-purple-50
-                        hover:px-4
                         hover:text-purple-700
                         hover:shadow-md
 
                         md:w-12
-                        md:hover:min-w-[110px]
+                        md:hover:w-[125px]
                       `
                   }
                 `}
               >
-                {/* Icon */}
-
                 <Icon
                   size={18}
                   strokeWidth={1.8}
@@ -154,44 +116,37 @@ export default function CategoryCards() {
                 />
 
                 {/* Mobile label */}
-
-                <span className="ml-2 whitespace-nowrap text-sm font-medium md:hidden">
+                <span className="ml-2 text-sm font-medium md:hidden">
                   {category.name}
                 </span>
 
                 {/* Desktop label */}
-
                 {!isActive && (
                   <span
                     className="
+                      ml-2
                       hidden
-                      whitespace-nowrap
                       text-sm
                       font-medium
-
-                      md:ml-0
                       md:block
-                      md:max-w-0
-                      md:overflow-hidden
-                      md:opacity-0
-
-                      md:transition-[max-width,margin,opacity]
-                      md:duration-200
-
-                      md:group-hover:ml-2
-                      md:group-hover:max-w-[100px]
-                      md:group-hover:opacity-100
                     "
                   >
                     {category.name}
                   </span>
                 )}
 
-                {/* Desktop All label */}
-
+                {/* Desktop active label */}
                 {isActive && (
-                  <span className="ml-2 hidden whitespace-nowrap text-sm font-medium md:block">
-                    {category.name}
+                  <span
+                    className="
+                      ml-2
+                      hidden
+                      text-sm
+                      font-medium
+                      md:block
+                    "
+                  >
+                    All
                   </span>
                 )}
               </button>
