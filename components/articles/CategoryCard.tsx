@@ -1,36 +1,128 @@
+"use client";
+
+import {
+  Sparkles,
+  Code2,
+  Server,
+  PanelsTopLeft,
+  BriefcaseBusiness,
+  Database,
+  Cloud,
+  GitBranch,
+} from "lucide-react";
+
 const categories = [
-  "All",
-  "AI",
-  "DSA",
-  "Backend",
-  "System Design",
-  "Frontend",
-  "Career",
-  "News",
+  {
+    name: "All",
+    icon: Sparkles,
+  },
+  {
+    name: "DSA",
+    icon: Code2,
+  },
+  {
+    name: "Backend",
+    icon: Server,
+  },
+  {
+    name: "Frontend",
+    icon: PanelsTopLeft,
+  },
+  {
+    name: "Career",
+    icon: BriefcaseBusiness,
+  },
+  {
+    name: "Databases",
+    icon: Database,
+  },
+  {
+    name: "Cloud",
+    icon: Cloud,
+  },
+  {
+    name: "DevOps",
+    icon: GitBranch,
+  },
 ];
 
 export default function CategoryCards() {
   return (
-    <section className="mt-6 w-full sm:mt-8">
+    <section className="mt-8 w-full">
+      <div
+        className="
+          flex
+          gap-2
+          overflow-x-auto
+          pb-2
+          scrollbar-none
+          md:gap-3
+          md:overflow-visible
+          md:pb-0
+        "
+      >
+        {categories.map((category, index) => {
+          const Icon = category.icon;
+          const isActive = index === 0;
 
-      <div className="flex w-full gap-3 overflow-x-auto pb-2 scrollbar-hide">
+          return (
+            <button
+              key={category.name}
+              type="button"
+              className={`
+                group
+                flex
+                h-11
+                shrink-0
+                items-center
+                justify-center
+                overflow-hidden
+                rounded-full
+                border
+                transition-all
+                duration-300
+                ease-out
 
-        {categories.map((category, index) => (
-          <button
-            key={category}
-            type="button"
-            className={`shrink-0 whitespace-nowrap rounded-full border px-5 py-2.5 text-sm font-medium transition-all duration-200 sm:px-6 sm:py-3 ${
-              index === 0
-                ? "border-purple-700 bg-purple-700 text-white shadow-md hover:bg-purple-800"
-                : "border-gray-200 bg-white text-gray-700 hover:border-purple-600 hover:text-purple-700"
-            }`}
-          >
-            {category}
-          </button>
-        ))}
+                ${
+                  isActive
+                    ? "w-20 border-purple-700 bg-purple-700 text-white shadow-md"
+                    : "w-11 border-gray-200 bg-white text-gray-700 hover:w-auto hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700"
+                }
 
+                md:h-12
+                ${
+                  isActive
+                    ? "md:w-20"
+                    : "md:w-12 md:hover:px-4"
+                }
+              `}
+            >
+              <Icon
+                size={18}
+                strokeWidth={1.8}
+                className="shrink-0"
+              />
+
+              <span
+                className={`
+                  whitespace-nowrap
+                  text-sm
+                  font-medium
+                  transition-all
+                  duration-300
+                  ${
+                    isActive
+                      ? "ml-2 opacity-100"
+                      : "ml-0 max-w-0 overflow-hidden opacity-0 group-hover:ml-2 group-hover:max-w-[120px] group-hover:opacity-100"
+                  }
+                `}
+              >
+                {category.name}
+              </span>
+            </button>
+          );
+        })}
       </div>
-
     </section>
   );
 }

@@ -1,36 +1,57 @@
-"use client";
-
-import { useState } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import { Menu, X, Search } from "lucide-react";
+import Link from "next/link";
+import {
+  Search,
+  BookOpen,
+  Brain,
+  Network,
+  Wrench,
+  Newspaper,
+} from "lucide-react";
 
 const navItems = [
-  { name: "Articles", href: "/articles" },
-  { name: "AI", href: "/ai" },
-  { name: "System Design", href: "/system-design" },
-  { name: "Tools", href: "/tools" },
-  { name: "News", href: "/news" },
+  {
+    name: "Articles",
+    href: "/articles",
+    icon: BookOpen,
+  },
+  {
+    name: "AI",
+    href: "/ai",
+    icon: Brain,
+  },
+  {
+    name: "System Design",
+    href: "/system-design",
+    icon: Network,
+  },
+  {
+    name: "Tools",
+    href: "/tools",
+    icon: Wrench,
+  },
+  {
+    name: "News",
+    href: "/news",
+    icon: Newspaper,
+  },
 ];
 
 export default function Navbar() {
-  const [open, setOpen] = useState(false);
-
   return (
-    <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
+    <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
         {/* Logo */}
-
         <Link
           href="/"
-          className="flex items-center gap-3"
+          className="flex shrink-0 items-center gap-2"
         >
           <Image
             src="/logo.png"
             alt="Elvoret Logo"
-            width={40}
-            height={40}
+            width={36}
+            height={36}
             priority
           />
 
@@ -39,66 +60,60 @@ export default function Navbar() {
           </span>
         </Link>
 
-        {/* Desktop Nav */}
+        {/* Desktop Navigation */}
+        <div className="hidden items-center gap-1 md:flex">
+          {navItems.map((item) => {
+            const Icon = item.icon;
 
-        <nav className="hidden items-center gap-8 lg:flex">
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                className="group flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-purple-50 hover:text-purple-700"
+              >
+                <Icon
+                  size={17}
+                  strokeWidth={1.8}
+                  className="transition-transform duration-200 group-hover:-translate-y-0.5"
+                />
 
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="text-gray-700 transition-colors hover:text-purple-700"
-            >
-              {item.name}
-            </Link>
-          ))}
+                <span>{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
 
-        </nav>
-
-        {/* Desktop Search */}
-
-        <button className="hidden rounded-lg p-2 transition hover:bg-gray-100 lg:flex">
-          <Search size={20} />
-        </button>
-
-        {/* Mobile Button */}
-
-        <button
-          onClick={() => setOpen(!open)}
-          className="rounded-lg p-2 transition hover:bg-gray-100 lg:hidden"
+        {/* Search */}
+        <Link
+          href="/search"
+          aria-label="Search Elvoret"
+          className="hidden rounded-xl p-2.5 text-gray-700 transition-colors duration-200 hover:bg-purple-50 hover:text-purple-700 md:flex"
         >
-          {open ? <X size={24} /> : <Menu size={24} />}
+          <Search size={21} strokeWidth={1.8} />
+        </Link>
+
+        {/* Mobile Menu Button */}
+        <button
+          type="button"
+          aria-label="Open navigation menu"
+          className="flex rounded-xl p-2 text-gray-700 transition-colors duration-200 hover:bg-purple-50 hover:text-purple-700 md:hidden"
+        >
+          <svg
+            width="27"
+            height="27"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+          >
+            <line x1="4" y1="6" x2="20" y2="6" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <line x1="4" y1="18" x2="20" y2="18" />
+          </svg>
         </button>
 
       </div>
-
-      {/* Mobile Menu */}
-
-      <div
-        className={`overflow-hidden border-t border-gray-200 bg-white transition-all duration-300 lg:hidden ${
-          open ? "max-h-96" : "max-h-0"
-        }`}
-      >
-        <nav className="flex flex-col">
-
-          {navItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => setOpen(false)}
-              className="px-6 py-4 text-gray-700 transition hover:bg-purple-50 hover:text-purple-700"
-            >
-              {item.name}
-            </Link>
-          ))}
-
-          <button className="flex items-center gap-3 px-6 py-4 text-left text-gray-700 hover:bg-purple-50">
-            <Search size={18} />
-            Search
-          </button>
-
-        </nav>
-      </div>
-    </header>
+    </nav>
   );
 }
