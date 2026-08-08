@@ -27,12 +27,15 @@ export default function CategoryCards() {
     <section className="mt-8 w-full">
       <div
         className="
-          flex w-full items-center
+          flex
+          w-full
+          items-center
           gap-3
           overflow-x-auto
           pb-2
           scrollbar-none
 
+          sm:justify-between
           sm:gap-4
           sm:overflow-visible
           sm:pb-0
@@ -62,12 +65,10 @@ export default function CategoryCards() {
                 duration-300
                 ease-out
 
-                /* Mobile */
                 min-w-[72px]
                 gap-2
                 px-4
 
-                /* Desktop */
                 sm:w-12
                 sm:min-w-0
                 sm:gap-0
