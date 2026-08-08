@@ -31,7 +31,7 @@ const newsItems = [
 
 export default function NewsSection() {
   return (
-    <section className="w-full py-20 sm:py-24 lg:py-28">
+    <section className="w-full py-20 sm:py-24 lg:py-15">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
         {/* Header */}
