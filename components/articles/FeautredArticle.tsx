@@ -12,7 +12,6 @@ export default function FeaturedArticle() {
 
   return (
     <section className="mx-auto w-full px-0 py-6 sm:py-8">
-
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
 
         <div className="grid lg:grid-cols-5">
@@ -21,7 +20,7 @@ export default function FeaturedArticle() {
 
           <Link
             href={`/articles/${article.slug}`}
-            className="relative block h-52 overflow-hidden bg-[#f7f3ff] sm:h-64 lg:col-span-2 lg:h-64"
+            className="relative block aspect-[16/9] overflow-hidden bg-[#f7f3ff] lg:col-span-2"
           >
             <Image
               src={article.image}
@@ -35,7 +34,7 @@ export default function FeaturedArticle() {
 
           {/* CONTENT */}
 
-          <div className="flex flex-col justify-center p-5 sm:p-7 lg:col-span-3 lg:px-10 lg:py-7">
+          <div className="flex flex-col justify-center p-5 sm:p-7 lg:col-span-3 lg:px-10 lg:py-6">
 
             {/* Featured Label */}
 
@@ -93,7 +92,6 @@ export default function FeaturedArticle() {
         </div>
 
       </div>
-
     </section>
   );
 }
