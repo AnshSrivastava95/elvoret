@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 
@@ -57,9 +58,7 @@ export const metadata: Metadata = {
   ],
 
   creator: "Ansh Srivastava",
-
   publisher: "Elvoret",
-
   category: "Technology",
 
   alternates: {
@@ -127,9 +126,27 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-screen bg-white font-sans text-gray-900 antialiased">
+      <body>
         {children}
+
+        {/* Vercel Analytics */}
         <Analytics />
+
+        {/* Google Analytics */}
+        <Script
+          src="https://www.googletagmanager.com/gtag/js?id=G-1CR60QZKWH"
+          strategy="afterInteractive"
+        />
+
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){window.dataLayer.push(arguments);}
+            gtag('js', new Date());
+
+            gtag('config', 'G-1CR60QZKWH');
+          `}
+        </Script>
       </body>
     </html>
   );
