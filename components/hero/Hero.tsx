@@ -6,7 +6,7 @@ export default function Hero() {
         <section className="w-full bg-white">
             <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
 
-                <div className="grid items-center gap-8 lg:grid-cols-[45%_55%] lg:gap-10">
+                <div className="grid items-center gap-0 lg:grid-cols-[45%_55%] lg:gap-10">
 
                     {/* =========================================
                         MOBILE + DESKTOP LEFT CONTENT
@@ -27,7 +27,7 @@ export default function Hero() {
                         {/* Main Heading */}
 
                         <div className="order-2 w-full lg:order-none">
-                            <h1 className="mt-4 max-w-xl text-4xl font-extrabold leading-[1.02] tracking-tight text-gray-900 sm:text-5xl lg:mt-5 lg:text-[52px]">
+                            <h1 className="mt-3 max-w-xl text-4xl font-extrabold leading-[1.02] tracking-tight text-gray-900 sm:text-5xl lg:mt-5 lg:text-[52px]">
                                 Everything a
                                 <br />
                                 <span className="text-purple-700">
@@ -41,7 +41,7 @@ export default function Hero() {
                         {/* Description */}
 
                         <div className="order-3 w-full lg:order-none">
-                            <p className="mt-4 max-w-xl text-base leading-7 text-gray-600 sm:text-lg sm:leading-8">
+                            <p className="mt-3 max-w-xl text-base leading-7 text-gray-600 sm:text-lg sm:leading-8">
                                 Learn, build, and grow with in-depth articles,
                                 AI tools, real-world projects, and the latest
                                 tech insights.
@@ -53,7 +53,7 @@ export default function Hero() {
                         ========================================= */}
 
                         <div className="order-4 w-full lg:hidden">
-                            <div className="mt-7 w-full overflow-hidden rounded-3xl border border-gray-100 bg-white p-2 shadow-2xl">
+                            <div className="mt-5 w-full overflow-hidden rounded-3xl border border-gray-100 bg-white p-2 shadow-2xl">
                                 <Image
                                     src="/hero.png"
                                     alt="Elvoret software engineering learning dashboard"
