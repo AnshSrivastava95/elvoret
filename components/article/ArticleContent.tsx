@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { Article } from "@/lib/articles";
 
 type Props = {
@@ -5,6 +8,68 @@ type Props = {
 };
 
 export default function ArticleContent({ article }: Props) {
+  const [copied, setCopied] = useState<number | null>(null);
+
+  useEffect(() => {
+    const codeBlocks = document.querySelectorAll("article pre");
+
+    codeBlocks.forEach((pre, index) => {
+      // Prevent duplicate buttons
+      if (pre.querySelector("[data-copy-button]")) {
+        return;
+      }
+
+      const button = document.createElement("button");
+
+      button.setAttribute("data-copy-button", "true");
+      button.type = "button";
+      button.textContent = "Copy";
+
+      button.className =
+        "absolute right-3 top-3 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:bg-slate-700";
+
+      pre.classList.add("relative");
+
+      button.addEventListener("click", async () => {
+        const code = pre.querySelector("code")?.textContent ?? "";
+
+        try {
+          await navigator.clipboard.writeText(code);
+
+          setCopied(index);
+
+          setTimeout(() => {
+            setCopied((current) =>
+              current === index ? null : current
+            );
+          }, 2000);
+        } catch {
+          console.error("Failed to copy code.");
+        }
+      });
+
+      pre.appendChild(button);
+    });
+
+    return () => {
+      document
+        .querySelectorAll("[data-copy-button]")
+        .forEach((button) => button.remove());
+    };
+  }, [article.contentHtml]);
+
+  useEffect(() => {
+    document.querySelectorAll("article pre").forEach((pre, index) => {
+      const button = pre.querySelector(
+        "[data-copy-button]"
+      ) as HTMLButtonElement | null;
+
+      if (button) {
+        button.textContent = copied === index ? "Copied!" : "Copy";
+      }
+    });
+  }, [copied]);
+
   return (
     <article
       className="
@@ -32,11 +97,8 @@ export default function ArticleContent({ article }: Props) {
         prose-h1:text-4xl
         md:prose-h1:text-5xl
 
-        prose-h2:mt-20
+        prose-h2:mt-16
         prose-h2:mb-6
-        prose-h2:border-t
-        prose-h2:border-gray-200
-        prose-h2:pt-10
         prose-h2:text-3xl
         md:prose-h2:text-4xl
 
@@ -55,12 +117,7 @@ export default function ArticleContent({ article }: Props) {
         prose-strong:text-gray-900
 
         prose-ul:my-6
-        prose-ul:list-disc
-        prose-ul:pl-6
-
         prose-ol:my-6
-        prose-ol:pl-6
-
         prose-li:my-2
         prose-li:leading-8
 
@@ -71,15 +128,12 @@ export default function ArticleContent({ article }: Props) {
         prose-blockquote:py-3
         prose-blockquote:italic
         prose-blockquote:text-gray-700
-        prose-blockquote:rounded-r-xl
 
         prose-img:rounded-2xl
         prose-img:shadow-lg
 
-        prose-table:block
         prose-table:w-full
         prose-table:overflow-x-auto
-        prose-table:text-sm
 
         prose-th:border
         prose-th:bg-gray-100
@@ -98,6 +152,7 @@ export default function ArticleContent({ article }: Props) {
         prose-code:before:content-none
         prose-code:after:content-none
 
+        prose-pre:relative
         prose-pre:overflow-x-auto
         prose-pre:rounded-2xl
         prose-pre:border
@@ -105,9 +160,7 @@ export default function ArticleContent({ article }: Props) {
         prose-pre:bg-[#0f172a]
         prose-pre:p-6
         prose-pre:shadow-xl
-
-        selection:bg-purple-200
-        selection:text-gray-900
+        prose-pre:scrollbar-thin
       "
       dangerouslySetInnerHTML={{
         __html: article.contentHtml ?? "",
