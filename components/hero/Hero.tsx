@@ -6,13 +6,11 @@ export default function Hero() {
     <section className="w-full overflow-hidden bg-white">
       <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
 
-        <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-10">
+        <div className="flex flex-col lg:grid lg:grid-cols-2 lg:items-center lg:gap-12">
 
-          {/* LEFT CONTENT */}
+          {/* BADGE */}
 
-          <div className="w-full lg:basis-[45%]">
-
-            {/* Badge */}
+          <div className="lg:col-start-1 lg:row-start-1">
 
             <div className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1.5 sm:px-4 sm:py-2">
               <span className="text-xs font-semibold uppercase tracking-wide text-purple-700 sm:text-sm">
@@ -20,30 +18,52 @@ export default function Hero() {
               </span>
             </div>
 
-            {/* Heading */}
+            {/* HEADING */}
 
             <h1 className="mt-5 text-4xl font-extrabold leading-[1.08] tracking-tight text-gray-900 sm:text-5xl lg:mt-6 lg:text-[56px] lg:leading-[1.02]">
-
               Everything a{" "}
-
               <span className="text-purple-700">
                 Software Engineer
               </span>{" "}
-
               Needs
-
             </h1>
 
-            {/* Description */}
+            {/* DESCRIPTION */}
 
             <p className="mt-5 max-w-xl text-base leading-7 text-gray-600 sm:mt-6 sm:text-lg sm:leading-8 lg:max-w-md">
               Learn, build, and grow with in-depth articles, AI tools,
               real-world projects, and the latest tech insights.
             </p>
 
-            {/* Buttons */}
+          </div>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          {/* DASHBOARD */}
+
+          <div className="mt-8 w-full lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
+
+            <div className="w-full rounded-2xl border border-gray-100 bg-white p-1.5 shadow-xl sm:rounded-3xl sm:p-2 lg:shadow-2xl">
+
+              <Image
+                src="/hero.png"
+                alt="Elvoret developer dashboard"
+                width={1200}
+                height={850}
+                priority
+                sizes="(max-width:1024px) 100vw, 55vw"
+                className="h-auto w-full rounded-xl sm:rounded-2xl"
+              />
+
+            </div>
+
+          </div>
+
+          {/* BUTTONS + COMMUNITY */}
+
+          <div className="mt-8 lg:col-start-1 lg:row-start-2 lg:mt-8">
+
+            {/* BUTTONS */}
+
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
 
               <Link
                 href="/articles"
@@ -61,13 +81,11 @@ export default function Hero() {
 
             </div>
 
-            {/* Community */}
+            {/* COMMUNITY */}
 
             <div className="mt-8 sm:mt-10">
 
               <div className="flex items-center gap-3 sm:gap-4">
-
-                {/* Avatars */}
 
                 <div className="flex shrink-0 -space-x-3">
 
@@ -94,26 +112,6 @@ export default function Hero() {
                 </div>
 
               </div>
-
-            </div>
-
-          </div>
-
-          {/* RIGHT IMAGE */}
-
-          <div className="w-full lg:basis-[55%]">
-
-            <div className="w-full rounded-2xl border border-gray-100 bg-white p-1.5 shadow-xl sm:rounded-3xl sm:p-2 lg:shadow-2xl">
-
-              <Image
-                src="/hero.png"
-                alt="Elvoret Dashboard"
-                width={1200}
-                height={850}
-                priority
-                sizes="(max-width:1024px) 100vw, 55vw"
-                className="h-auto w-full rounded-xl sm:rounded-2xl"
-              />
 
             </div>
 
