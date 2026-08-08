@@ -7,6 +7,7 @@ import Footer from "@/components/layout/Footer";
 import ArticleHero from "@/components/article/ArticleHero";
 import ArticleContent from "@/components/article/ArticleContent";
 import ArticleJsonLd from "@/components/article/ArticleJsonLd";
+import ReadingProgress from "@/components/article/ReadingProgress";
 import LatestArticles from "@/components/articles/ArticleGrid";
 
 import { getArticleBySlug } from "@/lib/articles";
@@ -106,6 +107,8 @@ export default async function ArticlePage({
     return (
       <>
         <Navbar />
+
+        <ReadingProgress />
 
         <ArticleJsonLd article={article} />
 
