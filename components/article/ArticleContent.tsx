@@ -11,26 +11,48 @@ export default function ArticleContent({ article }: Props) {
   const [copied, setCopied] = useState<number | null>(null);
 
   useEffect(() => {
-    const codeBlocks = document.querySelectorAll("article pre");
+    const articleElement = document.querySelector("article");
+
+    if (!articleElement) return;
+
+    const codeBlocks = articleElement.querySelectorAll("pre");
 
     codeBlocks.forEach((pre, index) => {
-      if (pre.querySelector("[data-copy-button]")) {
+      // Prevent duplicate wrappers/buttons
+      if (pre.parentElement?.dataset.codeWrapper === "true") {
         return;
       }
 
-      pre.classList.add("relative");
+      /* Create wrapper */
+
+      const wrapper = document.createElement("div");
+
+      wrapper.dataset.codeWrapper = "true";
+
+      wrapper.className =
+        "relative my-8 overflow-hidden rounded-2xl border border-slate-800 bg-[#0f172a] shadow-xl";
+
+      /* Put PRE inside wrapper */
+
+      pre.parentNode?.insertBefore(wrapper, pre);
+
+      wrapper.appendChild(pre);
+
+      /* Copy button */
 
       const button = document.createElement("button");
 
       button.setAttribute("data-copy-button", "true");
+
       button.type = "button";
+
       button.textContent = "Copy";
 
       button.className = `
         absolute
         right-3
         top-3
-        z-20
+        z-30
         rounded-lg
         border
         border-slate-600
@@ -41,13 +63,19 @@ export default function ArticleContent({ article }: Props) {
         font-semibold
         text-white
         shadow-md
-        transition-colors
+        transition-all
+        duration-200
         hover:bg-slate-700
-        active:bg-slate-600
+        active:scale-95
       `;
 
+      /* Copy functionality */
+
       button.addEventListener("click", async () => {
-        const code = pre.querySelector("code")?.textContent ?? "";
+        const code =
+          pre.querySelector("code")?.textContent ??
+          pre.textContent ??
+          "";
 
         try {
           await navigator.clipboard.writeText(code);
@@ -64,15 +92,25 @@ export default function ArticleContent({ article }: Props) {
         }
       });
 
-      pre.appendChild(button);
+      wrapper.appendChild(button);
     });
 
     return () => {
-      document
-        .querySelectorAll("[data-copy-button]")
-        .forEach((button) => button.remove());
+      articleElement
+        .querySelectorAll("[data-code-wrapper]")
+        .forEach((wrapper) => {
+          const pre = wrapper.querySelector("pre");
+
+          if (pre) {
+            wrapper.parentNode?.insertBefore(pre, wrapper);
+          }
+
+          wrapper.remove();
+        });
     };
   }, [article.contentHtml]);
+
+  /* Update button text */
 
   useEffect(() => {
     document
@@ -144,6 +182,7 @@ export default function ArticleContent({ article }: Props) {
         prose-blockquote:bg-purple-50
         prose-blockquote:px-5
         prose-blockquote:py-3
+        prose-blockquote:italic
         prose-blockquote:text-gray-700
 
         prose-img:rounded-2xl
@@ -170,19 +209,18 @@ export default function ArticleContent({ article }: Props) {
         prose-code:before:content-none
         prose-code:after:content-none
 
-        prose-pre:relative
+        prose-pre:m-0
+        prose-pre:max-w-full
         prose-pre:overflow-x-auto
-        prose-pre:rounded-2xl
-        prose-pre:border
-        prose-pre:border-slate-800
-        prose-pre:bg-[#0f172a]
+        prose-pre:rounded-none
+        prose-pre:border-0
+        prose-pre:bg-transparent
         prose-pre:p-4
         prose-pre:pt-14
         sm:prose-pre:p-6
         sm:prose-pre:pt-14
-        prose-pre:shadow-xl
+        prose-pre:shadow-none
         prose-pre:scrollbar-thin
-
         prose-pre:whitespace-pre
       "
       dangerouslySetInnerHTML={{
