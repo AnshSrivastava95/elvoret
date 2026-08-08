@@ -2,83 +2,126 @@ import Link from "next/link";
 import Image from "next/image";
 
 export default function Hero() {
-    return (
-        <section className="ax-w-[1440px] mx-auto px-6 pt-2">
-            <div className="min-h-[72vh] flex items-center">
-                <div className="flex items-center justify-between gap-4 w-full">
-                    <div className="basis-[45%]">
-                        <div className="inline-flex items-center gap-2 rounded-full bg-purple-100 px-4 py-1">
-                            <span className="text-sm font-medium text-purple-800">
-                                Elevate Your Tomorrow.
-                            </span>
-                        </div>
+  return (
+    <section className="w-full overflow-hidden bg-white">
+      <div className="mx-auto max-w-7xl px-5 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
 
-                        <h1 className="mt-6 text-5xl lg:text-[56px] font-extrabold leading-[1.02] text-gray-900">
-                            Everything a
-                            <br />
-                            <span className="text-purple-700">
-                                Software Engineer
-                            </span>
-                            <br />
-                            Needs
-                        </h1>
+        <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:gap-10">
 
-                        <p className="mt-6 max-w-md text-lg leading-8 text-gray-600">
-                            Learn, build, and grow with in-depth articles, AI tools,
-                            real-world projects, and the latest tech insights.
-                        </p>
+          {/* LEFT CONTENT */}
 
-                        <div className="mt-8 flex items-center gap-4">
-                            <Link
-                                href="/articles"
-                                className="rounded-xl bg-purple-700 px-6 py-3 text-white font-semibold shadow-lg hover:bg-purple-800 transition-colors duration-200"
-                            >
-                                Explore Articles →
-                            </Link>
+          <div className="w-full lg:basis-[45%]">
 
-                            <Link
-                                href="/tools"
-                                className="rounded-xl border border-gray-300 bg-white px-6 py-3 font-semibold text-gray-900 hover:border-purple-700 hover:text-purple-700 transition-colors duration-200"
-                            >
-                                Explore AI Tools
-                            </Link>
-                        </div>
+            {/* Badge */}
 
-                        <div className="mt-10">
-                            <div className="flex items-center gap-4">
-                                <div className="flex -space-x-3">
-                                    <div className="h-10 w-10 rounded-full border-2 border-white bg-purple-200"></div>
-                                    <div className="h-10 w-10 rounded-full border-2 border-white bg-purple-300"></div>
-                                    <div className="h-10 w-10 rounded-full border-2 border-white bg-purple-400"></div>
-                                    <div className="h-10 w-10 rounded-full border-2 border-white bg-purple-500"></div>
-                                </div>
-
-                                <div>
-                                    <p className="font-semibold text-gray-900">
-                                        240+ developers already subscribed
-                                    </p>
-                                    <p className="text-sm text-gray-500">
-                                        Join our growing software engineering community.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="basis-[55%] flex justify-end">
-                        <div className="w-full max-w-none rounded-3xl bg-white p-2 shadow-2xl border border-gray-100">
-                            <Image
-                                src="/hero.png"
-                                alt="Elvoret Dashboard"
-                                width={1200}
-                                height={850}
-                                className="w-full rounded-2xl"
-                                priority
-                            />
-                        </div>
-                    </div>
-                </div>
+            <div className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1.5 sm:px-4 sm:py-2">
+              <span className="text-xs font-semibold uppercase tracking-wide text-purple-700 sm:text-sm">
+                Elevate Your Tomorrow.
+              </span>
             </div>
-        </section>
-    );
+
+            {/* Heading */}
+
+            <h1 className="mt-5 text-4xl font-extrabold leading-[1.08] tracking-tight text-gray-900 sm:text-5xl lg:mt-6 lg:text-[56px] lg:leading-[1.02]">
+
+              Everything a{" "}
+
+              <span className="text-purple-700">
+                Software Engineer
+              </span>{" "}
+
+              Needs
+
+            </h1>
+
+            {/* Description */}
+
+            <p className="mt-5 max-w-xl text-base leading-7 text-gray-600 sm:mt-6 sm:text-lg sm:leading-8 lg:max-w-md">
+              Learn, build, and grow with in-depth articles, AI tools,
+              real-world projects, and the latest tech insights.
+            </p>
+
+            {/* Buttons */}
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+
+              <Link
+                href="/articles"
+                className="inline-flex w-full items-center justify-center rounded-xl bg-purple-700 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-colors duration-200 hover:bg-purple-800 sm:w-auto sm:text-base"
+              >
+                Explore Articles →
+              </Link>
+
+              <Link
+                href="/tools"
+                className="inline-flex w-full items-center justify-center rounded-xl border border-gray-300 bg-white px-6 py-3.5 text-sm font-semibold text-gray-900 transition-colors duration-200 hover:border-purple-700 hover:text-purple-700 sm:w-auto sm:text-base"
+              >
+                Explore AI Tools
+              </Link>
+
+            </div>
+
+            {/* Community */}
+
+            <div className="mt-8 sm:mt-10">
+
+              <div className="flex items-center gap-3 sm:gap-4">
+
+                {/* Avatars */}
+
+                <div className="flex shrink-0 -space-x-3">
+
+                  <div className="h-9 w-9 rounded-full border-2 border-white bg-purple-200 sm:h-10 sm:w-10" />
+
+                  <div className="h-9 w-9 rounded-full border-2 border-white bg-purple-300 sm:h-10 sm:w-10" />
+
+                  <div className="h-9 w-9 rounded-full border-2 border-white bg-purple-400 sm:h-10 sm:w-10" />
+
+                  <div className="h-9 w-9 rounded-full border-2 border-white bg-purple-500 sm:h-10 sm:w-10" />
+
+                </div>
+
+                <div className="min-w-0">
+
+                  <p className="text-sm font-semibold leading-5 text-gray-900 sm:text-base">
+                    240+ developers already subscribed
+                  </p>
+
+                  <p className="mt-1 text-xs leading-5 text-gray-500 sm:text-sm">
+                    Join our growing software engineering community.
+                  </p>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+          {/* RIGHT IMAGE */}
+
+          <div className="w-full lg:basis-[55%]">
+
+            <div className="w-full rounded-2xl border border-gray-100 bg-white p-1.5 shadow-xl sm:rounded-3xl sm:p-2 lg:shadow-2xl">
+
+              <Image
+                src="/hero.png"
+                alt="Elvoret Dashboard"
+                width={1200}
+                height={850}
+                priority
+                sizes="(max-width:1024px) 100vw, 55vw"
+                className="h-auto w-full rounded-xl sm:rounded-2xl"
+              />
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+  );
 }
