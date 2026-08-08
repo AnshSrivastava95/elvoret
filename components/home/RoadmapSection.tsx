@@ -62,9 +62,11 @@ const roadmaps = [
 
 export default function RoadmapSection() {
   return (
-    <section className="mt-20 sm:mt-24 lg:mt-28">
-      <div className="rounded-3xl bg-purple-50 px-5 py-12 sm:px-8 sm:py-14 lg:px-12 lg:py-16">
-        {/* Section Header */}
+    <section className="relative left-1/2 mt-20 w-screen -translate-x-1/2 bg-purple-50 py-16 sm:mt-24 sm:py-20 lg:mt-28 lg:py-24">
+      {/* Content stays aligned with the rest of the website */}
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+        {/* Header */}
         <div className="max-w-3xl">
           <div className="inline-flex items-center rounded-full bg-white px-4 py-2 text-sm font-semibold text-purple-700 shadow-sm">
             LEARN WITH A PLAN
@@ -73,7 +75,9 @@ export default function RoadmapSection() {
           <h2 className="mt-5 text-4xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-5xl lg:text-6xl">
             Choose your path.
             <br />
-            <span className="text-purple-700">Build your skills.</span>
+            <span className="text-purple-700">
+              Build your skills.
+            </span>
           </h2>
 
           <p className="mt-5 max-w-2xl text-base leading-7 text-gray-600 sm:text-lg sm:leading-8">
@@ -83,7 +87,7 @@ export default function RoadmapSection() {
         </div>
 
         {/* Roadmap Cards */}
-        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3">
           {roadmaps.map((roadmap) => {
             const Icon = roadmap.icon;
 
@@ -94,20 +98,21 @@ export default function RoadmapSection() {
                 className="group flex min-h-[270px] flex-col rounded-2xl border border-purple-100 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-purple-200 hover:shadow-xl"
               >
                 {/* Icon */}
-                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-700 transition-colors duration-300 group-hover:bg-purple-700 group-hover:text-white">
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-700 transition-all duration-300 group-hover:bg-purple-700 group-hover:text-white">
                   <Icon size={23} strokeWidth={1.8} />
                 </div>
 
-                {/* Content */}
+                {/* Title */}
                 <h3 className="mt-5 text-xl font-bold tracking-tight text-gray-900">
                   {roadmap.title}
                 </h3>
 
+                {/* Description */}
                 <p className="mt-3 text-sm leading-6 text-gray-600">
                   {roadmap.description}
                 </p>
 
-                {/* Learning Path */}
+                {/* Path */}
                 <div className="mt-5 rounded-xl bg-gray-50 px-4 py-3">
                   <p className="text-xs font-medium leading-5 text-gray-500">
                     {roadmap.path}
@@ -117,6 +122,7 @@ export default function RoadmapSection() {
                 {/* CTA */}
                 <div className="mt-auto flex items-center gap-2 pt-6 text-sm font-semibold text-purple-700">
                   View Roadmap
+
                   <ArrowRight
                     size={17}
                     className="transition-transform duration-300 group-hover:translate-x-1"
