@@ -1,14 +1,6 @@
-"use client";
-
 import Image from "next/image";
 import Link from "next/link";
-import {
-  ArrowUpRight,
-  Github,
-  Linkedin,
-  Mail,
-  Twitter,
-} from "lucide-react";
+import { ArrowUpRight, Mail } from "lucide-react";
 
 const footerColumns = [
   {
@@ -40,20 +32,36 @@ const footerColumns = [
   },
 ];
 
+const socialLinks = [
+  {
+    name: "GitHub",
+    href: "https://github.com",
+    label: "GH",
+  },
+  {
+    name: "LinkedIn",
+    href: "https://linkedin.com",
+    label: "in",
+  },
+  {
+    name: "X",
+    href: "https://x.com",
+    label: "𝕏",
+  },
+];
+
 export default function Footer() {
   return (
     <footer className="mt-24 w-full border-t border-gray-200 bg-white">
-
-      {/* Main Footer */}
-
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+
+        {/* Main Footer */}
 
         <div className="grid gap-14 lg:grid-cols-[1.5fr_2fr]">
 
           {/* Brand */}
 
           <div className="max-w-md">
-
             <Link
               href="/"
               className="inline-flex items-center gap-2"
@@ -85,13 +93,11 @@ export default function Footer() {
             {/* Newsletter */}
 
             <div className="mt-7">
-
               <p className="text-sm font-semibold text-gray-900">
                 Get software engineering insights.
               </p>
 
               <div className="mt-3 flex max-w-md flex-col gap-2 sm:flex-row">
-
                 <input
                   type="email"
                   placeholder="Enter your email"
@@ -139,33 +145,26 @@ export default function Footer() {
                   Subscribe
                   <ArrowUpRight size={16} />
                 </button>
-
               </div>
 
               <p className="mt-2 text-xs text-gray-500">
                 No spam. Just useful software engineering content.
               </p>
-
             </div>
-
           </div>
 
           {/* Navigation Columns */}
 
           <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
-
             {footerColumns.map((column) => (
               <div key={column.title}>
-
                 <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900">
                   {column.title}
                 </h3>
 
                 <ul className="mt-5 space-y-3">
-
                   {column.links.map((link) => (
                     <li key={link.name}>
-
                       <Link
                         href={link.href}
                         className="
@@ -185,27 +184,21 @@ export default function Footer() {
                         <ArrowUpRight
                           size={13}
                           className="
-                            opacity-0
                             -translate-x-1
+                            opacity-0
                             transition-all
                             duration-200
                             group-hover:translate-x-0
                             group-hover:opacity-100
                           "
                         />
-
                       </Link>
-
                     </li>
                   ))}
-
                 </ul>
-
               </div>
             ))}
-
           </div>
-
         </div>
 
         {/* Divider */}
@@ -216,8 +209,9 @@ export default function Footer() {
 
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
 
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          {/* Copyright */}
 
+          <div className="flex items-center gap-2 text-sm text-gray-500">
             <span>
               © {new Date().getFullYear()} Elvoret.
             </span>
@@ -229,87 +223,43 @@ export default function Footer() {
             <span className="hidden sm:inline">
               Built for developers.
             </span>
-
           </div>
 
           {/* Social Links */}
 
           <div className="flex items-center gap-2">
 
-            <Link
-              href="https://github.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Elvoret on GitHub"
-              className="
-                flex
-                h-9
-                w-9
-                items-center
-                justify-center
-                rounded-lg
-                border
-                border-gray-200
-                text-gray-600
-                transition-all
-                duration-200
-                hover:border-purple-200
-                hover:bg-purple-50
-                hover:text-purple-700
-              "
-            >
-              <Github size={17} />
-            </Link>
+            {socialLinks.map((social) => (
+              <Link
+                key={social.name}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={`Elvoret on ${social.name}`}
+                className="
+                  flex
+                  h-9
+                  w-9
+                  items-center
+                  justify-center
+                  rounded-lg
+                  border
+                  border-gray-200
+                  text-xs
+                  font-bold
+                  text-gray-600
+                  transition-all
+                  duration-200
+                  hover:border-purple-200
+                  hover:bg-purple-50
+                  hover:text-purple-700
+                "
+              >
+                {social.label}
+              </Link>
+            ))}
 
-            <Link
-              href="https://linkedin.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Elvoret on LinkedIn"
-              className="
-                flex
-                h-9
-                w-9
-                items-center
-                justify-center
-                rounded-lg
-                border
-                border-gray-200
-                text-gray-600
-                transition-all
-                duration-200
-                hover:border-purple-200
-                hover:bg-purple-50
-                hover:text-purple-700
-              "
-            >
-              <Linkedin size={17} />
-            </Link>
-
-            <Link
-              href="https://x.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Elvoret on X"
-              className="
-                flex
-                h-9
-                w-9
-                items-center
-                justify-center
-                rounded-lg
-                border
-                border-gray-200
-                text-gray-600
-                transition-all
-                duration-200
-                hover:border-purple-200
-                hover:bg-purple-50
-                hover:text-purple-700
-              "
-            >
-              <Twitter size={17} />
-            </Link>
+            {/* Email */}
 
             <Link
               href="/contact"
@@ -335,7 +285,6 @@ export default function Footer() {
             </Link>
 
           </div>
-
         </div>
 
         {/* Legal */}
@@ -343,7 +292,6 @@ export default function Footer() {
         <div className="mt-6 flex flex-col gap-3 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
 
           <div className="flex flex-wrap gap-x-5 gap-y-2">
-
             <Link
               href="/privacy"
               className="transition-colors hover:text-purple-700"
@@ -364,7 +312,6 @@ export default function Footer() {
             >
               Cookie Policy
             </Link>
-
           </div>
 
           <span>
@@ -372,9 +319,7 @@ export default function Footer() {
           </span>
 
         </div>
-
       </div>
-
     </footer>
   );
 }
