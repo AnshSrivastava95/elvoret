@@ -14,10 +14,11 @@ export default function ArticleContent({ article }: Props) {
     const codeBlocks = document.querySelectorAll("article pre");
 
     codeBlocks.forEach((pre, index) => {
-      // Prevent duplicate buttons
       if (pre.querySelector("[data-copy-button]")) {
         return;
       }
+
+      pre.classList.add("relative");
 
       const button = document.createElement("button");
 
@@ -25,10 +26,25 @@ export default function ArticleContent({ article }: Props) {
       button.type = "button";
       button.textContent = "Copy";
 
-      button.className =
-        "absolute right-3 top-3 rounded-lg border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-medium text-slate-200 transition-colors hover:bg-slate-700";
-
-      pre.classList.add("relative");
+      button.className = `
+        absolute
+        right-3
+        top-3
+        z-20
+        rounded-lg
+        border
+        border-slate-600
+        bg-slate-800
+        px-3
+        py-1.5
+        text-xs
+        font-semibold
+        text-white
+        shadow-md
+        transition-colors
+        hover:bg-slate-700
+        active:bg-slate-600
+      `;
 
       button.addEventListener("click", async () => {
         const code = pre.querySelector("code")?.textContent ?? "";
@@ -59,15 +75,14 @@ export default function ArticleContent({ article }: Props) {
   }, [article.contentHtml]);
 
   useEffect(() => {
-    document.querySelectorAll("article pre").forEach((pre, index) => {
-      const button = pre.querySelector(
-        "[data-copy-button]"
-      ) as HTMLButtonElement | null;
+    document
+      .querySelectorAll("[data-copy-button]")
+      .forEach((button, index) => {
+        const copyButton = button as HTMLButtonElement;
 
-      if (button) {
-        button.textContent = copied === index ? "Copied!" : "Copy";
-      }
-    });
+        copyButton.textContent =
+          copied === index ? "Copied!" : "Copy";
+      });
   }, [copied]);
 
   return (
@@ -94,20 +109,23 @@ export default function ArticleContent({ article }: Props) {
         prose-headings:tracking-tight
         prose-headings:text-gray-900
 
-        prose-h1:text-4xl
+        prose-h1:text-3xl
+        sm:prose-h1:text-4xl
         md:prose-h1:text-5xl
 
-        prose-h2:mt-16
-        prose-h2:mb-6
-        prose-h2:text-3xl
+        prose-h2:mt-14
+        prose-h2:mb-5
+        prose-h2:text-2xl
+        sm:prose-h2:text-3xl
         md:prose-h2:text-4xl
 
-        prose-h3:mt-12
+        prose-h3:mt-10
         prose-h3:mb-4
-        prose-h3:text-2xl
+        prose-h3:text-xl
+        sm:prose-h3:text-2xl
 
-        prose-p:leading-8
         prose-p:text-gray-700
+        prose-p:leading-8
 
         prose-a:font-medium
         prose-a:text-purple-700
@@ -124,14 +142,14 @@ export default function ArticleContent({ article }: Props) {
         prose-blockquote:border-l-4
         prose-blockquote:border-purple-600
         prose-blockquote:bg-purple-50
-        prose-blockquote:px-6
+        prose-blockquote:px-5
         prose-blockquote:py-3
-        prose-blockquote:italic
         prose-blockquote:text-gray-700
 
         prose-img:rounded-2xl
         prose-img:shadow-lg
 
+        prose-table:block
         prose-table:w-full
         prose-table:overflow-x-auto
 
@@ -158,9 +176,14 @@ export default function ArticleContent({ article }: Props) {
         prose-pre:border
         prose-pre:border-slate-800
         prose-pre:bg-[#0f172a]
-        prose-pre:p-6
+        prose-pre:p-4
+        prose-pre:pt-14
+        sm:prose-pre:p-6
+        sm:prose-pre:pt-14
         prose-pre:shadow-xl
         prose-pre:scrollbar-thin
+
+        prose-pre:whitespace-pre
       "
       dangerouslySetInnerHTML={{
         __html: article.contentHtml ?? "",
