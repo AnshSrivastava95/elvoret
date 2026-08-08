@@ -48,18 +48,22 @@ const categories = [
 
 export default function CategoryCards() {
   return (
-    <section className="mt-8 w-full">
+    <section className="mt-8 w-full sm:mt-10">
       <div
         className="
           flex
+          w-full
           gap-2
           overflow-x-auto
           pb-2
-          scrollbar-none
-          md:gap-3
+          sm:gap-3
           md:overflow-visible
           md:pb-0
         "
+        style={{
+          scrollbarWidth: "none",
+          msOverflowStyle: "none",
+        }}
       >
         {categories.map((category, index) => {
           const Icon = category.icon;
@@ -69,6 +73,7 @@ export default function CategoryCards() {
             <button
               key={category.name}
               type="button"
+              aria-label={category.name}
               className={`
                 group
                 flex
@@ -85,15 +90,22 @@ export default function CategoryCards() {
 
                 ${
                   isActive
-                    ? "w-20 border-purple-700 bg-purple-700 text-white shadow-md"
-                    : "w-11 border-gray-200 bg-white text-gray-700 hover:w-auto hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700"
+                    ? "border-purple-700 bg-purple-700 px-4 text-white shadow-md"
+                    : "border-gray-200 bg-white text-gray-700 hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700"
                 }
+
+                /* Mobile */
+
+                max-w-none
+                px-4
+
+                /* Desktop */
 
                 md:h-12
                 ${
                   isActive
-                    ? "md:w-20"
-                    : "md:w-12 md:hover:px-4"
+                    ? "md:w-20 md:px-0"
+                    : "md:w-12 md:px-0 md:hover:w-auto md:hover:px-4"
                 }
               `}
             >
@@ -108,12 +120,26 @@ export default function CategoryCards() {
                   whitespace-nowrap
                   text-sm
                   font-medium
-                  transition-all
-                  duration-300
+
+                  /* Mobile: always visible */
+
+                  ml-2
+                  max-w-[140px]
+                  opacity-100
+
+                  /* Desktop: hidden until hover */
+
+                  md:ml-0
+                  md:max-w-0
+                  md:overflow-hidden
+                  md:opacity-0
+                  md:transition-all
+                  md:duration-300
+
                   ${
-                    isActive
-                      ? "ml-2 opacity-100"
-                      : "ml-0 max-w-0 overflow-hidden opacity-0 group-hover:ml-2 group-hover:max-w-[120px] group-hover:opacity-100"
+                    !isActive
+                      ? "md:group-hover:ml-2 md:group-hover:max-w-[120px] md:group-hover:opacity-100"
+                      : ""
                   }
                 `}
               >
