@@ -90,61 +90,66 @@ export default function CategoryCards() {
 
                 ${
                   isActive
-                    ? "border-purple-700 bg-purple-700 px-4 text-white shadow-md"
+                    ? "border-purple-700 bg-purple-700 text-white shadow-md"
                     : "border-gray-200 bg-white text-gray-700 hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700"
                 }
 
-                /* Mobile */
+                /* MOBILE */
 
-                max-w-none
                 px-4
 
-                /* Desktop */
+                /* DESKTOP */
 
                 md:h-12
                 ${
                   isActive
-                    ? "md:w-20 md:px-0"
+                    ? "md:w-auto md:px-4"
                     : "md:w-12 md:px-0 md:hover:w-auto md:hover:px-4"
                 }
               `}
             >
+              {/* Icon */}
+
               <Icon
                 size={18}
                 strokeWidth={1.8}
                 className="shrink-0"
               />
 
-              <span
-                className={`
-                  whitespace-nowrap
-                  text-sm
-                  font-medium
+              {/* MOBILE LABEL */}
 
-                  /* Mobile: always visible */
-
-                  ml-2
-                  max-w-[140px]
-                  opacity-100
-
-                  /* Desktop: hidden until hover */
-
-                  md:ml-0
-                  md:max-w-0
-                  md:overflow-hidden
-                  md:opacity-0
-                  md:transition-all
-                  md:duration-300
-
-                  ${
-                    !isActive
-                      ? "md:group-hover:ml-2 md:group-hover:max-w-[120px] md:group-hover:opacity-100"
-                      : ""
-                  }
-                `}
-              >
+              <span className="ml-2 whitespace-nowrap text-sm font-medium md:hidden">
                 {category.name}
               </span>
+
+              {/* DESKTOP LABEL */}
+
+              {isActive ? (
+                <span className="ml-2 hidden whitespace-nowrap text-sm font-medium md:block">
+                  {category.name}
+                </span>
+              ) : (
+                <span
+                  className="
+                    hidden
+                    whitespace-nowrap
+                    text-sm
+                    font-medium
+                    opacity-0
+                    transition-all
+                    duration-300
+                    md:block
+                    md:ml-0
+                    md:max-w-0
+                    md:overflow-hidden
+                    md:group-hover:ml-2
+                    md:group-hover:max-w-[120px]
+                    md:group-hover:opacity-100
+                  "
+                >
+                  {category.name}
+                </span>
+              )}
             </button>
           );
         })}
