@@ -3,12 +3,14 @@ import Image from "next/image";
 
 export default function Hero() {
     return (
-        <section className="w-full">
-            <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10 lg:px-8 lg:py-14">
-                <div className="flex flex-col items-center gap-10 lg:flex-row lg:items-center lg:gap-12">
+        <section className="w-full bg-white">
+            <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-20">
+                
+                {/* HERO GRID */}
+                <div className="grid items-center gap-8 lg:grid-cols-[45%_55%] lg:gap-10">
 
                     {/* LEFT CONTENT */}
-                    <div className="w-full lg:basis-[45%]">
+                    <div className="w-full">
 
                         {/* Badge */}
                         <div className="inline-flex items-center rounded-full bg-purple-100 px-4 py-2">
@@ -30,8 +32,9 @@ export default function Hero() {
 
                         {/* Description */}
                         <p className="mt-4 max-w-xl text-base leading-7 text-gray-600 sm:text-lg sm:leading-8">
-                            Learn, build, and grow with in-depth articles, AI tools,
-                            real-world projects, and the latest tech insights.
+                            Learn, build, and grow with in-depth articles, AI
+                            tools, real-world projects, and the latest tech
+                            insights.
                         </p>
 
                         {/* Main CTAs */}
@@ -51,15 +54,16 @@ export default function Hero() {
                             </Link>
                         </div>
 
-                        {/* NEWSLETTER */}
-                        <div className="mt-7 max-w-xl">
+                        {/* DESKTOP NEWSLETTER */}
+                        <div className="mt-7 hidden max-w-xl lg:block">
                             <div className="mb-2">
                                 <p className="text-sm font-semibold text-gray-900">
                                     Join 240+ developers already subscribed
                                 </p>
 
                                 <p className="text-xs text-gray-500">
-                                    Get practical software engineering insights in your inbox.
+                                    Get practical software engineering insights
+                                    in your inbox.
                                 </p>
                             </div>
 
@@ -87,16 +91,54 @@ export default function Hero() {
                     </div>
 
                     {/* RIGHT IMAGE */}
-                    <div className="w-full lg:basis-[55%]">
-                        <div className="w-full rounded-3xl border border-gray-100 bg-white p-2 shadow-2xl">
+                    <div className="order-2 w-full lg:order-none">
+                        <div className="w-full overflow-hidden rounded-3xl border border-gray-100 bg-white p-2 shadow-2xl">
                             <Image
                                 src="/hero.png"
                                 alt="Elvoret software engineering learning dashboard"
                                 width={1200}
                                 height={850}
                                 priority
-                                className="w-full rounded-2xl"
+                                className="h-auto w-full rounded-2xl object-contain"
+                                sizes="(max-width: 1024px) 100vw, 55vw"
                             />
+                        </div>
+                    </div>
+
+                    {/* MOBILE NEWSLETTER */}
+                    <div className="order-3 w-full lg:hidden">
+                        <div className="mt-1 max-w-xl">
+                            <div className="mb-2">
+                                <p className="text-sm font-semibold text-gray-900">
+                                    Join 240+ developers already subscribed
+                                </p>
+
+                                <p className="text-xs text-gray-500">
+                                    Get practical software engineering insights
+                                    in your inbox.
+                                </p>
+                            </div>
+
+                            <form
+                                action="#"
+                                method="POST"
+                                className="flex w-full flex-col gap-2 sm:flex-row"
+                            >
+                                <input
+                                    type="email"
+                                    name="email"
+                                    placeholder="Enter your email"
+                                    required
+                                    className="min-w-0 flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100"
+                                />
+
+                                <button
+                                    type="submit"
+                                    className="rounded-xl bg-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors duration-200 hover:bg-purple-800"
+                                >
+                                    Join Newsletter
+                                </button>
+                            </form>
                         </div>
                     </div>
 
