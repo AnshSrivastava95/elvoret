@@ -1,5 +1,8 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
+import { useState } from "react";
 import {
   Search,
   BookOpen,
@@ -7,6 +10,8 @@ import {
   Network,
   Wrench,
   Newspaper,
+  Menu,
+  X,
 } from "lucide-react";
 
 const navItems = [
@@ -38,13 +43,21 @@ const navItems = [
 ];
 
 export default function Navbar() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const closeMenu = () => {
+    setIsOpen(false);
+  };
+
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
 
         {/* Logo */}
+
         <Link
           href="/"
+          onClick={closeMenu}
           className="flex shrink-0 items-center gap-2"
         >
           <Image
@@ -61,6 +74,7 @@ export default function Navbar() {
         </Link>
 
         {/* Desktop Navigation */}
+
         <div className="hidden items-center gap-1 md:flex">
           {navItems.map((item) => {
             const Icon = item.icon;
@@ -83,7 +97,8 @@ export default function Navbar() {
           })}
         </div>
 
-        {/* Search */}
+        {/* Desktop Search */}
+
         <Link
           href="/search"
           aria-label="Search Elvoret"
@@ -93,26 +108,79 @@ export default function Navbar() {
         </Link>
 
         {/* Mobile Menu Button */}
+
         <button
           type="button"
-          aria-label="Open navigation menu"
+          aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-expanded={isOpen}
+          onClick={() => setIsOpen((previous) => !previous)}
           className="flex rounded-xl p-2 text-gray-700 transition-colors duration-200 hover:bg-purple-50 hover:text-purple-700 md:hidden"
         >
-          <svg
-            width="27"
-            height="27"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <line x1="4" y1="6" x2="20" y2="6" />
-            <line x1="4" y1="12" x2="20" y2="12" />
-            <line x1="4" y1="18" x2="20" y2="18" />
-          </svg>
+          {isOpen ? (
+            <X size={27} strokeWidth={2} />
+          ) : (
+            <Menu size={27} strokeWidth={2} />
+          )}
         </button>
 
+      </div>
+
+      {/* Mobile Navigation */}
+
+      <div
+        className={`
+          overflow-hidden border-t border-gray-100 bg-white transition-all duration-300 ease-in-out md:hidden
+          ${
+            isOpen
+              ? "max-h-[500px] opacity-100"
+              : "max-h-0 opacity-0"
+          }
+        `}
+      >
+        <div className="px-4 py-3 sm:px-6">
+
+          {/* Navigation Links */}
+
+          <div className="flex flex-col gap-1">
+
+            {navItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={closeMenu}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-purple-50 hover:text-purple-700"
+                >
+                  <Icon
+                    size={20}
+                    strokeWidth={1.8}
+                  />
+
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
+
+            {/* Search */}
+
+            <Link
+              href="/search"
+              onClick={closeMenu}
+              className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-purple-50 hover:text-purple-700"
+            >
+              <Search
+                size={20}
+                strokeWidth={1.8}
+              />
+
+              <span>Search</span>
+            </Link>
+
+          </div>
+
+        </div>
       </div>
     </nav>
   );
