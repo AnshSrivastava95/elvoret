@@ -4,7 +4,7 @@ import { ArrowUpRight, Mail } from "lucide-react";
 
 const footerColumns = [
   {
-    title: "Explore",
+    title: "EXPLORE",
     links: [
       { name: "Articles", href: "/articles" },
       { name: "AI", href: "/ai" },
@@ -13,7 +13,7 @@ const footerColumns = [
     ],
   },
   {
-    title: "Learn",
+    title: "LEARN",
     links: [
       { name: "Roadmaps", href: "/roadmaps" },
       { name: "Playground", href: "/playground" },
@@ -22,7 +22,7 @@ const footerColumns = [
     ],
   },
   {
-    title: "Elvoret",
+    title: "ELVORET",
     links: [
       { name: "About", href: "/about" },
       { name: "Newsletter", href: "/newsletter" },
@@ -53,15 +53,20 @@ const socialLinks = [
 export default function Footer() {
   return (
     <footer className="mt-24 w-full border-t border-gray-200 bg-white">
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+      <div className="mx-auto max-w-7xl px-5 py-16 sm:px-6 sm:py-20 lg:px-8">
 
-        {/* Main Footer */}
+        {/* ========================================
+            MAIN FOOTER
+        ======================================== */}
 
-        <div className="grid gap-14 lg:grid-cols-[1.5fr_2fr]">
+        <div className="grid grid-cols-1 gap-14 lg:grid-cols-[1.45fr_1fr_1fr_1fr] lg:gap-12">
 
-          {/* Brand */}
+          {/* ========================================
+              BRAND COLUMN
+          ======================================== */}
 
           <div className="max-w-md">
+
             <Link
               href="/"
               className="inline-flex items-center gap-2"
@@ -71,6 +76,7 @@ export default function Footer() {
                 alt="Elvoret"
                 width={38}
                 height={38}
+                priority
               />
 
               <span className="text-xl font-bold tracking-wide text-purple-900">
@@ -78,32 +84,35 @@ export default function Footer() {
               </span>
             </Link>
 
-            <h2 className="mt-7 text-3xl font-extrabold leading-tight tracking-tight text-gray-900 sm:text-4xl">
+            <h2 className="mt-7 max-w-md text-3xl font-extrabold leading-[1.08] tracking-tight text-gray-900 sm:text-4xl">
               Everything you need to
-              <span className="text-purple-700">
-                {" "}build better.
+              <span className="block text-purple-700">
+                build better.
               </span>
             </h2>
 
-            <p className="mt-5 max-w-md text-sm leading-6 text-gray-600 sm:text-base">
+            <p className="mt-5 max-w-sm text-sm leading-6 text-gray-600 sm:text-base">
               Learn, practice, build, and grow with practical resources
               designed for the modern software engineer.
             </p>
 
             {/* Newsletter */}
 
-            <div className="mt-7">
-              <p className="text-sm font-semibold text-gray-900">
+            <div className="mt-7 max-w-lg">
+
+              <p className="text-sm font-bold text-gray-900">
                 Get software engineering insights.
               </p>
 
-              <div className="mt-3 flex max-w-md flex-col gap-2 sm:flex-row">
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+
                 <input
                   type="email"
                   placeholder="Enter your email"
                   aria-label="Email address"
                   className="
                     h-11
+                    min-w-0
                     flex-1
                     rounded-xl
                     border
@@ -126,6 +135,7 @@ export default function Footer() {
                   className="
                     inline-flex
                     h-11
+                    shrink-0
                     items-center
                     justify-center
                     gap-2
@@ -145,84 +155,102 @@ export default function Footer() {
                   Subscribe
                   <ArrowUpRight size={16} />
                 </button>
+
               </div>
 
-              <p className="mt-2 text-xs text-gray-500">
+              <p className="mt-2 text-xs leading-5 text-gray-500">
                 No spam. Just useful software engineering content.
               </p>
+
             </div>
           </div>
 
-          {/* Navigation Columns */}
+          {/* ========================================
+              FOOTER NAVIGATION
+          ======================================== */}
 
-          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3">
-            {footerColumns.map((column) => (
-              <div key={column.title}>
-                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-900">
-                  {column.title}
-                </h3>
+          {footerColumns.map((column) => (
+            <div key={column.title}>
 
-                <ul className="mt-5 space-y-3">
-                  {column.links.map((link) => (
-                    <li key={link.name}>
-                      <Link
-                        href={link.href}
-                        className="
-                          group
-                          inline-flex
-                          items-center
-                          gap-1
-                          text-sm
-                          text-gray-600
-                          transition-colors
-                          duration-200
-                          hover:text-purple-700
-                        "
-                      >
+              <h3 className="text-xs font-bold tracking-[0.12em] text-gray-900">
+                {column.title}
+              </h3>
+
+              <ul className="mt-6 space-y-4">
+
+                {column.links.map((link) => (
+                  <li key={link.name}>
+
+                    <Link
+                      href={link.href}
+                      className="
+                        group
+                        inline-flex
+                        items-center
+                        gap-1.5
+                        text-sm
+                        text-gray-600
+                        transition-colors
+                        duration-200
+                        hover:text-purple-700
+                      "
+                    >
+                      <span>
                         {link.name}
+                      </span>
 
-                        <ArrowUpRight
-                          size={13}
-                          className="
-                            -translate-x-1
-                            opacity-0
-                            transition-all
-                            duration-200
-                            group-hover:translate-x-0
-                            group-hover:opacity-100
-                          "
-                        />
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
+                      <ArrowUpRight
+                        size={13}
+                        strokeWidth={1.8}
+                        className="
+                          -translate-x-1
+                          opacity-0
+                          transition-all
+                          duration-200
+                          group-hover:translate-x-0
+                          group-hover:opacity-100
+                        "
+                      />
+
+                    </Link>
+
+                  </li>
+                ))}
+
+              </ul>
+            </div>
+          ))}
+
         </div>
 
-        {/* Divider */}
+        {/* ========================================
+            DIVIDER
+        ======================================== */}
 
         <div className="my-12 h-px w-full bg-gray-200" />
 
-        {/* Bottom Row */}
+        {/* ========================================
+            BOTTOM ROW
+        ======================================== */}
 
-        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
 
           {/* Copyright */}
 
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 sm:text-sm">
+
             <span>
               © {new Date().getFullYear()} Elvoret.
             </span>
 
-            <span className="hidden text-gray-300 sm:inline">
+            <span className="text-gray-300">
               •
             </span>
 
-            <span className="hidden sm:inline">
+            <span>
               Built for developers.
             </span>
+
           </div>
 
           {/* Social Links */}
@@ -259,8 +287,6 @@ export default function Footer() {
               </Link>
             ))}
 
-            {/* Email */}
-
             <Link
               href="/contact"
               aria-label="Contact Elvoret"
@@ -281,17 +307,24 @@ export default function Footer() {
                 hover:text-purple-700
               "
             >
-              <Mail size={17} />
+              <Mail
+                size={17}
+                strokeWidth={1.8}
+              />
             </Link>
 
           </div>
+
         </div>
 
-        {/* Legal */}
+        {/* ========================================
+            LEGAL ROW
+        ======================================== */}
 
         <div className="mt-6 flex flex-col gap-3 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
 
           <div className="flex flex-wrap gap-x-5 gap-y-2">
+
             <Link
               href="/privacy"
               className="transition-colors hover:text-purple-700"
@@ -312,6 +345,7 @@ export default function Footer() {
             >
               Cookie Policy
             </Link>
+
           </div>
 
           <span>
@@ -319,6 +353,7 @@ export default function Footer() {
           </span>
 
         </div>
+
       </div>
     </footer>
   );
