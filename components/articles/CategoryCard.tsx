@@ -25,7 +25,14 @@ const categories = [
 export default function CategoryCards() {
   return (
     <section className="mt-8 w-full">
-      <div className="flex w-full items-center gap-3 overflow-x-auto pb-2 sm:overflow-visible sm:pb-0">
+      <div
+        className="
+          flex w-full items-center gap-3
+          overflow-x-auto pb-2
+          scrollbar-none
+          sm:overflow-visible sm:pb-0
+        "
+      >
         {categories.map((category, index) => {
           const Icon = category.icon;
           const isActive = index === 0;
@@ -35,14 +42,30 @@ export default function CategoryCards() {
               key={category.name}
               type="button"
               className={`
-                group flex h-12 shrink-0 items-center justify-center
-                gap-2 overflow-hidden rounded-full border
-                text-sm font-medium
-                transition-all duration-300 ease-out
+                group
+                flex
+                h-12
+                shrink-0
+                items-center
+                justify-center
+                rounded-full
+                border
+                text-sm
+                font-medium
+                transition-all
+                duration-300
+                ease-out
 
-                w-auto min-w-[72px] px-4
+                /* Mobile */
+                min-w-[72px]
+                gap-2
+                px-4
 
-                sm:w-12 sm:min-w-0 sm:px-0
+                /* Desktop */
+                sm:w-12
+                sm:min-w-0
+                sm:gap-0
+                sm:px-0
                 sm:hover:w-32
 
                 ${
@@ -52,24 +75,33 @@ export default function CategoryCards() {
                 }
               `}
             >
-              <Icon
-                size={18}
-                strokeWidth={1.8}
-                className="shrink-0"
-              />
+              {/* Icon */}
+              <span className="flex h-5 w-5 shrink-0 items-center justify-center">
+                <Icon
+                  size={18}
+                  strokeWidth={1.8}
+                />
+              </span>
 
-              {/* Mobile */}
+              {/* Mobile label */}
               <span className="whitespace-nowrap sm:hidden">
                 {category.name}
               </span>
 
-              {/* Desktop */}
+              {/* Desktop label */}
               <span
                 className="
-                  hidden whitespace-nowrap
+                  hidden
+                  whitespace-nowrap
+                  overflow-hidden
                   opacity-0
-                  transition-opacity duration-200
-                  sm:block sm:group-hover:opacity-100
+                  transition-all
+                  duration-200
+                  sm:block
+                  sm:max-w-0
+                  sm:group-hover:ml-2
+                  sm:group-hover:max-w-[90px]
+                  sm:group-hover:opacity-100
                 "
               >
                 {category.name}
