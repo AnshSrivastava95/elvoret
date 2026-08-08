@@ -27,10 +27,15 @@ export default function CategoryCards() {
     <section className="mt-8 w-full">
       <div
         className="
-          flex w-full items-center gap-3
-          overflow-x-auto pb-2
+          flex w-full items-center
+          gap-3
+          overflow-x-auto
+          pb-2
           scrollbar-none
-          sm:overflow-visible sm:pb-0
+
+          sm:gap-4
+          sm:overflow-visible
+          sm:pb-0
         "
       >
         {categories.map((category, index) => {
@@ -41,6 +46,7 @@ export default function CategoryCards() {
             <button
               key={category.name}
               type="button"
+              aria-label={category.name}
               className={`
                 group
                 flex
@@ -70,7 +76,7 @@ export default function CategoryCards() {
 
                 ${
                   isActive
-                    ? "border-purple-700 bg-purple-700 text-white shadow-md"
+                    ? "border-purple-700 bg-purple-700 text-white shadow-md hover:bg-purple-800"
                     : "border-gray-200 bg-white text-gray-700 hover:border-purple-200 hover:bg-purple-50 hover:text-purple-700"
                 }
               `}
@@ -92,13 +98,13 @@ export default function CategoryCards() {
               <span
                 className="
                   hidden
-                  whitespace-nowrap
+                  max-w-0
                   overflow-hidden
+                  whitespace-nowrap
                   opacity-0
                   transition-all
                   duration-200
                   sm:block
-                  sm:max-w-0
                   sm:group-hover:ml-2
                   sm:group-hover:max-w-[90px]
                   sm:group-hover:opacity-100
