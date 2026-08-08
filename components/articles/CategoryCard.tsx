@@ -12,14 +12,38 @@ import {
 } from "lucide-react";
 
 const categories = [
-  { name: "All", icon: Sparkles },
-  { name: "DSA", icon: Code2 },
-  { name: "Backend", icon: Server },
-  { name: "Frontend", icon: PanelsTopLeft },
-  { name: "Career", icon: BriefcaseBusiness },
-  { name: "Databases", icon: Database },
-  { name: "Cloud", icon: Cloud },
-  { name: "DevOps", icon: GitBranch },
+  {
+    name: "All",
+    icon: Sparkles,
+  },
+  {
+    name: "DSA",
+    icon: Code2,
+  },
+  {
+    name: "Backend",
+    icon: Server,
+  },
+  {
+    name: "Frontend",
+    icon: PanelsTopLeft,
+  },
+  {
+    name: "Career",
+    icon: BriefcaseBusiness,
+  },
+  {
+    name: "Databases",
+    icon: Database,
+  },
+  {
+    name: "Cloud",
+    icon: Cloud,
+  },
+  {
+    name: "DevOps",
+    icon: GitBranch,
+  },
 ];
 
 export default function CategoryCards() {
@@ -32,7 +56,7 @@ export default function CategoryCards() {
           gap-3
           overflow-x-auto
           pb-2
-          md:gap-4
+          sm:gap-4
           md:overflow-visible
           md:pb-0
         "
@@ -48,63 +72,50 @@ export default function CategoryCards() {
           return (
             <div
               key={category.name}
-              className="
-                relative
-                h-11
-                w-11
-                shrink-0
-                md:h-12
-                md:w-12
-              "
+              className="group relative shrink-0"
             >
+              {/* Category Button */}
+
               <button
                 type="button"
                 aria-label={category.name}
                 className={`
-                  group
-                  absolute
-                  left-0
-                  top-0
-                  z-20
                   flex
                   h-11
                   items-center
                   justify-center
-                  overflow-hidden
                   rounded-full
                   border
-                  whitespace-nowrap
-                  transition-[width,padding,background-color,border-color,box-shadow]
+                  transition-colors
                   duration-200
-                  ease-out
+
                   md:h-12
+                  md:w-12
+                  md:px-0
 
                   ${
                     isActive
                       ? `
-                        w-20
+                        w-auto
+                        gap-2
                         border-purple-700
                         bg-purple-700
                         px-4
                         text-white
                         shadow-md
-                        md:w-20
                       `
                       : `
-                        w-11
+                        w-auto
+                        gap-2
                         border-gray-200
                         bg-white
-                        px-0
+                        px-4
                         text-gray-700
-
-                        hover:w-[120px]
                         hover:border-purple-200
                         hover:bg-purple-50
                         hover:text-purple-700
-                        hover:shadow-md
 
-                        md:w-12
-                        md:hover:w-[125px]
+                        md:gap-0
                       `
                   }
                 `}
@@ -115,41 +126,70 @@ export default function CategoryCards() {
                   className="shrink-0"
                 />
 
-                {/* Mobile label */}
-                <span className="ml-2 text-sm font-medium md:hidden">
+                {/* Mobile label + All desktop label */}
+
+                <span
+                  className={`
+                    whitespace-nowrap
+                    text-sm
+                    font-medium
+
+                    ${
+                      isActive
+                        ? "block"
+                        : "block md:hidden"
+                    }
+                  `}
+                >
                   {category.name}
                 </span>
-
-                {/* Desktop label */}
-                {!isActive && (
-                  <span
-                    className="
-                      ml-2
-                      hidden
-                      text-sm
-                      font-medium
-                      md:block
-                    "
-                  >
-                    {category.name}
-                  </span>
-                )}
-
-                {/* Desktop active label */}
-                {isActive && (
-                  <span
-                    className="
-                      ml-2
-                      hidden
-                      text-sm
-                      font-medium
-                      md:block
-                    "
-                  >
-                    All
-                  </span>
-                )}
               </button>
+
+              {/* Desktop Tooltip */}
+
+              {!isActive && (
+                <div
+                  className="
+                    pointer-events-none
+                    absolute
+                    left-1/2
+                    top-full
+                    z-50
+                    mt-2
+                    hidden
+                    -translate-x-1/2
+                    whitespace-nowrap
+                    rounded-lg
+                    bg-gray-900
+                    px-3
+                    py-1.5
+                    text-xs
+                    font-medium
+                    text-white
+                    opacity-0
+                    shadow-lg
+                    transition-opacity
+                    duration-150
+                    group-hover:opacity-100
+                    md:block
+                  "
+                >
+                  {category.name}
+
+                  <div
+                    className="
+                      absolute
+                      -top-1
+                      left-1/2
+                      h-2
+                      w-2
+                      -translate-x-1/2
+                      rotate-45
+                      bg-gray-900
+                    "
+                  />
+                </div>
+              )}
             </div>
           );
         })}
