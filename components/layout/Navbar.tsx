@@ -12,6 +12,8 @@ import {
   Newspaper,
   Menu,
   X,
+  Trophy,
+  Code2
 } from "lucide-react";
 
 const navItems = [
@@ -31,6 +33,16 @@ const navItems = [
     icon: Network,
   },
   {
+  label: "CP",
+  href: "/cp",
+  icon: Trophy,
+},
+{
+  label: "Roadmaps",
+  href: "/roadmaps",
+  icon: Map,
+},
+  {
     name: "Tools",
     href: "/tools",
     icon: Wrench,
@@ -40,6 +52,11 @@ const navItems = [
     href: "/news",
     icon: Newspaper,
   },
+{
+  label: "Playground",
+  href: "/playground",
+  icon: Code2,
+},
 ];
 
 export default function Navbar() {
