@@ -62,7 +62,7 @@ const roadmaps = [
 
 export default function RoadmapSection() {
   return (
-    <section className="relative left-1/2 mt-20 w-screen -translate-x-1/2 bg-purple-50 py-16 sm:mt-24 sm:py-20 lg:mt-28 lg:py-24">
+    <section className="relative left-1/2 mt-20 w-[calc(100vw-2rem)] -translate-x-1/2 rounded-3xl bg-purple-50 py-16 sm:mt-24 sm:w-[calc(100vw-3rem)] sm:py-20 lg:mt-28 lg:w-[calc(100vw-4rem)] lg:py-24">
       {/* Content stays aligned with the rest of the website */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
 
