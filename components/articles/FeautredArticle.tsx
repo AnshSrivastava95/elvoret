@@ -20,7 +20,7 @@ export default function FeaturedArticle() {
 
           <Link
             href={`/articles/${article.slug}`}
-            className="relative block aspect-[16/9] overflow-hidden bg-[#f7f3ff] lg:col-span-2"
+            className="relative block h-56 overflow-hidden bg-[#f7f3ff] sm:h-64 lg:col-span-2 lg:h-auto"
           >
             <Image
               src={article.image}
@@ -28,13 +28,13 @@ export default function FeaturedArticle() {
               fill
               priority
               sizes="(max-width:1024px) 100vw, 40vw"
-              className="object-contain transition-transform duration-500 hover:scale-105"
+              className="object-cover object-center transition-transform duration-500 hover:scale-105"
             />
           </Link>
 
           {/* CONTENT */}
 
-          <div className="flex flex-col justify-center p-5 sm:p-7 lg:col-span-3 lg:px-10 lg:py-6">
+          <div className="flex flex-col justify-center p-5 sm:p-6 lg:col-span-3 lg:px-9 lg:py-6">
 
             {/* Featured Label */}
 
@@ -52,13 +52,13 @@ export default function FeaturedArticle() {
 
             {/* Description */}
 
-            <p className="mt-3 line-clamp-2 max-w-2xl text-sm leading-6 text-gray-600 sm:text-base">
+            <p className="mt-3 line-clamp-2 max-w-2xl text-sm leading-6 text-gray-600">
               {article.description}
             </p>
 
             {/* Metadata */}
 
-            <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-500 sm:text-sm">
+            <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-gray-500 sm:text-sm">
 
               <span className="font-medium text-gray-800">
                 {article.author}
@@ -78,7 +78,7 @@ export default function FeaturedArticle() {
 
             <Link
               href={`/articles/${article.slug}`}
-              className="group mt-5 inline-flex w-fit items-center gap-2 font-semibold text-purple-700 transition-colors hover:text-purple-900"
+              className="group mt-4 inline-flex w-fit items-center gap-2 text-sm font-semibold text-purple-700 transition-colors hover:text-purple-900"
             >
               Read Article
 
@@ -90,7 +90,6 @@ export default function FeaturedArticle() {
           </div>
 
         </div>
-
       </div>
     </section>
   );
