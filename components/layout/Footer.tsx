@@ -53,23 +53,31 @@ const socialLinks = [
 export default function Footer() {
   return (
     <footer className="mt-24 w-full border-t border-gray-200 bg-white">
-      <div className="mx-auto max-w-7xl px-5 py-16 sm:px-6 sm:py-20 lg:px-8">
+      <div className="mx-auto max-w-7xl px-5 py-14 sm:px-6 sm:py-16 lg:px-8">
 
-        {/* ========================================
+        {/* =========================================
             MAIN FOOTER
-        ======================================== */}
+        ========================================= */}
 
-        <div className="grid grid-cols-1 gap-14 lg:grid-cols-[1.45fr_1fr_1fr_1fr] lg:gap-12">
+        <div
+          className="
+            grid
+            grid-cols-1
+            gap-12
+            lg:grid-cols-[1.45fr_1fr_1fr_1fr]
+            lg:gap-14
+          "
+        >
 
-          {/* ========================================
-              BRAND COLUMN
-          ======================================== */}
+          {/* =========================================
+              BRAND
+          ========================================= */}
 
-          <div className="max-w-md">
+          <div className="flex h-full flex-col">
 
             <Link
               href="/"
-              className="inline-flex items-center gap-2"
+              className="inline-flex w-fit items-center gap-2"
             >
               <Image
                 src="/logo.png"
@@ -84,27 +92,33 @@ export default function Footer() {
               </span>
             </Link>
 
-            <h2 className="mt-7 max-w-md text-3xl font-extrabold leading-[1.08] tracking-tight text-gray-900 sm:text-4xl">
-              Everything you need to
-              <span className="block text-purple-700">
-                build better.
-              </span>
-            </h2>
+            <div className="mt-7">
 
-            <p className="mt-5 max-w-sm text-sm leading-6 text-gray-600 sm:text-base">
-              Learn, practice, build, and grow with practical resources
-              designed for the modern software engineer.
-            </p>
+              <h2 className="max-w-md text-3xl font-extrabold leading-[1.08] tracking-tight text-gray-900 sm:text-4xl">
+                Everything you
+                <br />
+                need to
+                <span className="block text-purple-700">
+                  build better.
+                </span>
+              </h2>
+
+              <p className="mt-5 max-w-sm text-sm leading-6 text-gray-600 sm:text-base">
+                Learn, practice, build, and grow with practical resources
+                designed for the modern software engineer.
+              </p>
+
+            </div>
 
             {/* Newsletter */}
 
-            <div className="mt-7 max-w-lg">
+            <div className="mt-auto pt-8">
 
               <p className="text-sm font-bold text-gray-900">
                 Get software engineering insights.
               </p>
 
-              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+              <div className="mt-3 flex max-w-lg flex-col gap-2 sm:flex-row">
 
                 <input
                   type="email"
@@ -163,14 +177,18 @@ export default function Footer() {
               </p>
 
             </div>
+
           </div>
 
-          {/* ========================================
-              FOOTER NAVIGATION
-          ======================================== */}
+          {/* =========================================
+              NAVIGATION COLUMNS
+          ========================================= */}
 
           {footerColumns.map((column) => (
-            <div key={column.title}>
+            <div
+              key={column.title}
+              className="flex h-full min-h-[330px] flex-col"
+            >
 
               <h3 className="text-xs font-bold tracking-[0.12em] text-gray-900">
                 {column.title}
@@ -195,9 +213,7 @@ export default function Footer() {
                         hover:text-purple-700
                       "
                     >
-                      <span>
-                        {link.name}
-                      </span>
+                      <span>{link.name}</span>
 
                       <ArrowUpRight
                         size={13}
@@ -218,22 +234,23 @@ export default function Footer() {
                 ))}
 
               </ul>
+
             </div>
           ))}
 
         </div>
 
-        {/* ========================================
+        {/* =========================================
             DIVIDER
-        ======================================== */}
+        ========================================= */}
 
-        <div className="my-12 h-px w-full bg-gray-200" />
+        <div className="mt-12 h-px w-full bg-gray-200" />
 
-        {/* ========================================
+        {/* =========================================
             BOTTOM ROW
-        ======================================== */}
+        ========================================= */}
 
-        <div className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-5 pt-6 sm:flex-row sm:items-center sm:justify-between">
 
           {/* Copyright */}
 
@@ -253,7 +270,7 @@ export default function Footer() {
 
           </div>
 
-          {/* Social Links */}
+          {/* Social */}
 
           <div className="flex items-center gap-2">
 
@@ -307,21 +324,18 @@ export default function Footer() {
                 hover:text-purple-700
               "
             >
-              <Mail
-                size={17}
-                strokeWidth={1.8}
-              />
+              <Mail size={17} strokeWidth={1.8} />
             </Link>
 
           </div>
 
         </div>
 
-        {/* ========================================
-            LEGAL ROW
-        ======================================== */}
+        {/* =========================================
+            LEGAL
+        ========================================= */}
 
-        <div className="mt-6 flex flex-col gap-3 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mt-5 flex flex-col gap-3 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
 
           <div className="flex flex-wrap gap-x-5 gap-y-2">
 
