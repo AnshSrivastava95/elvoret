@@ -21,7 +21,7 @@ export default function FeaturedArticle() {
 
           <Link
             href={`/articles/${article.slug}`}
-            className="relative block h-52 overflow-hidden bg-gradient-to-br from-[#faf7ff] via-[#f7f3ff] to-[#efe8ff] sm:h-64 lg:col-span-2 lg:h-64"
+            className="relative block h-52 overflow-hidden bg-[#f7f3ff] sm:h-64 lg:col-span-2 lg:h-64"
           >
             <Image
               src={article.image}
@@ -29,7 +29,7 @@ export default function FeaturedArticle() {
               fill
               priority
               sizes="(max-width:1024px) 100vw, 40vw"
-              className="object-cover transition-transform duration-500 hover:scale-105"
+              className="object-contain transition-transform duration-500 hover:scale-105"
             />
           </Link>
 
@@ -37,7 +37,7 @@ export default function FeaturedArticle() {
 
           <div className="flex flex-col justify-center p-5 sm:p-7 lg:col-span-3 lg:px-10 lg:py-7">
 
-            {/* Label */}
+            {/* Featured Label */}
 
             <span className="inline-flex w-fit rounded-full bg-purple-100 px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-purple-700">
               ⭐ Featured Article
@@ -57,38 +57,36 @@ export default function FeaturedArticle() {
               {article.description}
             </p>
 
-            {/* Metadata + Button */}
+            {/* Metadata */}
 
-            <div className="mt-5 flex flex-wrap items-center justify-between gap-4">
+            <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2 text-xs text-gray-500 sm:text-sm">
 
-              <div className="flex flex-wrap items-center gap-2 text-xs text-gray-500 sm:text-sm">
+              <span className="font-medium text-gray-800">
+                {article.author}
+              </span>
 
-                <span className="font-medium text-gray-800">
-                  {article.author}
-                </span>
+              <span>•</span>
 
-                <span>•</span>
+              <span>{article.date}</span>
 
-                <span>{article.date}</span>
+              <span>•</span>
 
-                <span>•</span>
-
-                <span>{article.readTime}</span>
-
-              </div>
-
-              <Link
-                href={`/articles/${article.slug}`}
-                className="group inline-flex shrink-0 items-center gap-2 font-semibold text-purple-700 transition-colors hover:text-purple-900"
-              >
-                Read Article
-
-                <span className="transition-transform duration-300 group-hover:translate-x-1">
-                  →
-                </span>
-              </Link>
+              <span>{article.readTime}</span>
 
             </div>
+
+            {/* Read Article */}
+
+            <Link
+              href={`/articles/${article.slug}`}
+              className="group mt-5 inline-flex w-fit items-center gap-2 font-semibold text-purple-700 transition-colors hover:text-purple-900"
+            >
+              Read Article
+
+              <span className="transition-transform duration-300 group-hover:translate-x-1">
+                →
+              </span>
+            </Link>
 
           </div>
 
