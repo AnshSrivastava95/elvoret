@@ -8,9 +8,11 @@ export default function Hero() {
 
         <div className="flex flex-col lg:grid lg:grid-cols-2 lg:items-center lg:gap-12">
 
-          {/* BADGE */}
+          {/* LEFT — BADGE, HEADING & DESCRIPTION */}
 
           <div className="lg:col-start-1 lg:row-start-1">
+
+            {/* Badge */}
 
             <div className="inline-flex items-center rounded-full bg-purple-100 px-3 py-1.5 sm:px-4 sm:py-2">
               <span className="text-xs font-semibold uppercase tracking-wide text-purple-700 sm:text-sm">
@@ -18,7 +20,7 @@ export default function Hero() {
               </span>
             </div>
 
-            {/* HEADING */}
+            {/* Heading */}
 
             <h1 className="mt-5 text-4xl font-extrabold leading-[1.08] tracking-tight text-gray-900 sm:text-5xl lg:mt-6 lg:text-[56px] lg:leading-[1.02]">
               Everything a{" "}
@@ -28,16 +30,16 @@ export default function Hero() {
               Needs
             </h1>
 
-            {/* DESCRIPTION */}
+            {/* Description */}
 
-            <p className="mt-5 max-w-xl text-base leading-7 text-gray-600 sm:mt-6 sm:text-lg sm:leading-8 lg:max-w-md">
+            <p className="mt-4 max-w-xl text-base leading-7 text-gray-600 sm:mt-5 sm:text-lg sm:leading-8 lg:max-w-md">
               Learn, build, and grow with in-depth articles, AI tools,
               real-world projects, and the latest tech insights.
             </p>
 
           </div>
 
-          {/* DASHBOARD */}
+          {/* RIGHT — DASHBOARD */}
 
           <div className="mt-8 w-full lg:col-start-2 lg:row-span-2 lg:row-start-1 lg:mt-0">
 
@@ -57,11 +59,11 @@ export default function Hero() {
 
           </div>
 
-          {/* BUTTONS + COMMUNITY */}
+          {/* LEFT — BUTTONS & COMMUNITY */}
 
-          <div className="mt-8 lg:col-start-1 lg:row-start-2 lg:mt-8">
+          <div className="mt-6 lg:col-start-1 lg:row-start-2 lg:mt-5">
 
-            {/* BUTTONS */}
+            {/* Buttons */}
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
 
@@ -81,11 +83,13 @@ export default function Hero() {
 
             </div>
 
-            {/* COMMUNITY */}
+            {/* Community */}
 
             <div className="mt-8 sm:mt-10">
 
               <div className="flex items-center gap-3 sm:gap-4">
+
+                {/* Avatars */}
 
                 <div className="flex shrink-0 -space-x-3">
 
@@ -98,6 +102,8 @@ export default function Hero() {
                   <div className="h-9 w-9 rounded-full border-2 border-white bg-purple-500 sm:h-10 sm:w-10" />
 
                 </div>
+
+                {/* Community text */}
 
                 <div className="min-w-0">
 
