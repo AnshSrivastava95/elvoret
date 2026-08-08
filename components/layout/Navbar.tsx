@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+
 import {
   Search,
   BookOpen,
@@ -13,7 +14,8 @@ import {
   Menu,
   X,
   Trophy,
-  Code2
+  Code2,
+  Map,
 } from "lucide-react";
 
 const navItems = [
@@ -33,15 +35,15 @@ const navItems = [
     icon: Network,
   },
   {
-  label: "CP",
-  href: "/cp",
-  icon: Trophy,
-},
-{
-  label: "Roadmaps",
-  href: "/roadmaps",
-  icon: Map,
-},
+    name: "CP",
+    href: "/cp",
+    icon: Trophy,
+  },
+  {
+    name: "Roadmaps",
+    href: "/roadmaps",
+    icon: Map,
+  },
   {
     name: "Tools",
     href: "/tools",
@@ -52,11 +54,11 @@ const navItems = [
     href: "/news",
     icon: Newspaper,
   },
-{
-  label: "Playground",
-  href: "/playground",
-  icon: Code2,
-},
+  {
+    name: "Playground",
+    href: "/playground",
+    icon: Code2,
+  },
 ];
 
 export default function Navbar() {
@@ -100,15 +102,33 @@ export default function Navbar() {
               <Link
                 key={item.name}
                 href={item.href}
-                className="group flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-purple-50 hover:text-purple-700"
+                className="
+                  group
+                  flex
+                  items-center
+                  gap-2
+                  rounded-xl
+                  px-3
+                  py-2.5
+                  text-sm
+                  font-medium
+                  text-gray-700
+                  transition-all
+                  duration-200
+                  hover:bg-purple-50
+                  hover:text-purple-700
+                  lg:px-4
+                "
               >
                 <Icon
                   size={17}
                   strokeWidth={1.8}
-                  className="transition-transform duration-200 group-hover:-translate-y-0.5"
+                  className="shrink-0 transition-transform duration-200 group-hover:-translate-y-0.5"
                 />
 
-                <span>{item.name}</span>
+                <span className="whitespace-nowrap">
+                  {item.name}
+                </span>
               </Link>
             );
           })}
@@ -119,37 +139,76 @@ export default function Navbar() {
         <Link
           href="/search"
           aria-label="Search Elvoret"
-          className="hidden rounded-xl p-2.5 text-gray-700 transition-colors duration-200 hover:bg-purple-50 hover:text-purple-700 md:flex"
+          className="
+            hidden
+            rounded-xl
+            p-2.5
+            text-gray-700
+            transition-colors
+            duration-200
+            hover:bg-purple-50
+            hover:text-purple-700
+            md:flex
+          "
         >
-          <Search size={21} strokeWidth={1.8} />
+          <Search
+            size={21}
+            strokeWidth={1.8}
+          />
         </Link>
 
         {/* Mobile Menu Button */}
 
         <button
           type="button"
-          aria-label={isOpen ? "Close navigation menu" : "Open navigation menu"}
+          aria-label={
+            isOpen
+              ? "Close navigation menu"
+              : "Open navigation menu"
+          }
           aria-expanded={isOpen}
           onClick={() => setIsOpen((previous) => !previous)}
-          className="flex rounded-xl p-2 text-gray-700 transition-colors duration-200 hover:bg-purple-50 hover:text-purple-700 md:hidden"
+          className="
+            flex
+            rounded-xl
+            p-2
+            text-gray-700
+            transition-colors
+            duration-200
+            hover:bg-purple-50
+            hover:text-purple-700
+            md:hidden
+          "
         >
           {isOpen ? (
-            <X size={27} strokeWidth={2} />
+            <X
+              size={27}
+              strokeWidth={2}
+            />
           ) : (
-            <Menu size={27} strokeWidth={2} />
+            <Menu
+              size={27}
+              strokeWidth={2}
+            />
           )}
         </button>
-
       </div>
 
       {/* Mobile Navigation */}
 
       <div
         className={`
-          overflow-hidden border-t border-gray-100 bg-white transition-all duration-300 ease-in-out md:hidden
+          overflow-hidden
+          border-t
+          border-gray-100
+          bg-white
+          transition-all
+          duration-300
+          ease-in-out
+          md:hidden
           ${
             isOpen
-              ? "max-h-[500px] opacity-100"
+              ? "max-h-[700px] opacity-100"
               : "max-h-0 opacity-0"
           }
         `}
@@ -159,7 +218,6 @@ export default function Navbar() {
           {/* Navigation Links */}
 
           <div className="flex flex-col gap-1">
-
             {navItems.map((item) => {
               const Icon = item.icon;
 
@@ -168,35 +226,66 @@ export default function Navbar() {
                   key={item.name}
                   href={item.href}
                   onClick={closeMenu}
-                  className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-purple-50 hover:text-purple-700"
+                  className="
+                    flex
+                    items-center
+                    gap-3
+                    rounded-xl
+                    px-4
+                    py-3.5
+                    text-base
+                    font-medium
+                    text-gray-700
+                    transition-colors
+                    duration-200
+                    hover:bg-purple-50
+                    hover:text-purple-700
+                  "
                 >
                   <Icon
                     size={20}
                     strokeWidth={1.8}
+                    className="shrink-0"
                   />
 
-                  <span>{item.name}</span>
+                  <span>
+                    {item.name}
+                  </span>
                 </Link>
               );
             })}
 
-            {/* Search */}
+            {/* Mobile Search */}
 
             <Link
               href="/search"
               onClick={closeMenu}
-              className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-medium text-gray-700 transition-colors duration-200 hover:bg-purple-50 hover:text-purple-700"
+              className="
+                flex
+                items-center
+                gap-3
+                rounded-xl
+                px-4
+                py-3.5
+                text-base
+                font-medium
+                text-gray-700
+                transition-colors
+                duration-200
+                hover:bg-purple-50
+                hover:text-purple-700
+              "
             >
               <Search
                 size={20}
                 strokeWidth={1.8}
               />
 
-              <span>Search</span>
+              <span>
+                Search
+              </span>
             </Link>
-
           </div>
-
         </div>
       </div>
     </nav>
