@@ -23,7 +23,7 @@ export default function FeaturedArticle() {
             className="relative block h-56 overflow-hidden bg-[#f7f3ff] sm:h-64 lg:col-span-2 lg:h-auto"
           >
             <Image
-              src="/feautred.png"
+              src={article.image}
               alt={article.title}
               fill
               priority
