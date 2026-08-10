@@ -1,7 +1,8 @@
+---
 title: "REST API Design: Best Practices, HTTP Methods, Status Codes, Authentication & Pagination"
 description: "Learn practical REST API design best practices with real examples covering HTTP methods, PUT vs PATCH, status codes, API responses, authentication, authorization, pagination, and common API design mistakes."
 date: "2026-08-10"
-author: "Elvoret"
+author: "Ansh Srivastava"
 category: "Backend Development"
 tags:
   - REST API
@@ -12,37 +13,44 @@ tags:
   - HTTP
   - JavaScript
   - Node.js
-image:"/rest.png"
-feature: true
-____
+image: "/images/articles/rest-api-design.png"
+featured: true
+---
+
+# REST API Design: Best Practices for Building Clean and Scalable APIs
+
+**Meta description:** Learn REST API design through practical examples from building Elvoret, including HTTP methods, PUT vs PATCH, status codes, API responses, pagination, authentication, authorization, and common REST API mistakes.
 
 When I first started building backend applications, my main concern was pretty simple:
 
-Does the endpoint work?
+**Does the endpoint work?**
 
-If GET /articles returned the articles, I was happy.
+If `GET /articles` returned the articles, I was happy.
 
-If POST /articles created an article, even better.
+If `POST /articles` created an article, even better.
 
 But as the application grows, you start realizing that an API can work perfectly and still be badly designed.
 
-The URL might be confusing.
-The response might be inconsistent.
-The wrong HTTP status code might be returned.
+The URL might be confusing.  
+The response might be inconsistent.  
+The wrong HTTP status code might be returned.  
 Authentication might work, but authorization might be missing.
 
 And then six months later, you have an API that technically works but is annoying to maintain.
 
-While working on Elvoret, I've been thinking much more carefully about this.
+While working on **Elvoret**, I've been thinking much more carefully about this.
 
 So instead of treating REST API design as a list of rules to memorize, I wanted to understand the reasoning behind the decisions.
 
-What is a REST API?
+---
+
+## What is a REST API?
 
 At a basic level, an API is a contract between different parts of an application.
 
 For a web application like Elvoret, we can think about it like this:
 
+```text
 Frontend
    |
    | HTTP request
@@ -180,7 +188,7 @@ This is where things get slightly confusing.
 
 PUT vs PATCH: what's the difference?
 
-This confused me at first because both are used for updating resources.
+This confused me at first because both are used when modifying resources.
 
 The simplest way I've found to think about it is:
 
@@ -475,7 +483,7 @@ That's another example of why system design is mostly about trade-offs.
 
 You don't necessarily need the most complicated solution on day one.
 
-You need a solution appropriate for the problem you actually have.
+You need a solution appropriate for the problem you actually have, while leaving yourself room to grow.
 
 Consistent API error handling
 
