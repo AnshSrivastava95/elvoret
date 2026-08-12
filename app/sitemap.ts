@@ -1,10 +1,10 @@
 import { MetadataRoute } from "next";
-import { articles } from "@/data/article";
+import { getAllArticles } from "@/lib/articles";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const baseUrl = "https://elvoret.in";
 
-  const articlePages = articles.map((article) => ({
+  const articlePages = getAllArticles().map((article) => ({
     url: `${baseUrl}/articles/${article.slug}`,
     lastModified: new Date(),
     changeFrequency: "weekly" as const,
