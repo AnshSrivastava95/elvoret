@@ -117,7 +117,7 @@ export default async function ArticlePage({
 
           <ArticleContent article={article} />
 
-          <LatestArticles />
+          <LatestArticles columns={3} />
         </main>
 
         <Footer />

@@ -1,7 +1,9 @@
 import ArticleCard from "./ArticleCard";
 import { getAllArticles } from "@/lib/articles";
-
-export default function ArticleGrid() {
+type Props ={
+  columns?: 2|3;
+}
+export default function ArticleGrid({ columns = 2 }: Props) {
   const articles = getAllArticles();
 
   const latestArticles = articles.filter(
@@ -30,7 +32,7 @@ export default function ArticleGrid() {
 
       {latestArticles.length > 0 ? (
 
-        <div className="mt-10 grid gap-6 sm:gap-8 md:grid-cols-2">
+        <div className={`mt-10 grid gap-6 sm:gap-8 ${columns === 3 ? "md:grid-cols-2 xl:grid-cols-3" : "md:grid-cols-2"}`}>
 
           {latestArticles.map((article) => (
             <ArticleCard
