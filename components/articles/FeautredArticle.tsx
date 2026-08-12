@@ -11,7 +11,7 @@ export default function FeaturedArticle() {
   if (!article) return null;
 
   return (
-    <section className="mx-auto w-full px-0 py-0 sm:py-8">
+    <section className="mx-auto w-full px-0 py-6 sm:py-8">
       <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-all duration-300 hover:shadow-lg">
 
         <div className="grid lg:grid-cols-5">
@@ -20,7 +20,7 @@ export default function FeaturedArticle() {
 
           <Link
             href={`/articles/${article.slug}`}
-            className="relative block h-72 overflow-hidden bg-[#f7f3ff] sm:h-72 lg:col-span-2 lg:min-h-[280px]"
+            className="relative block h-64 overflow-hidden bg-[#f7f3ff] sm:h-72 lg:col-span-2 lg:min-h-[320px]"
           >
             <Image
               src={article.image}
