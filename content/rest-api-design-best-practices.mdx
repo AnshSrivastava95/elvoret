@@ -63,12 +63,17 @@ Backend
    |
    ↓
 Database
+```
+
 
 Suppose the frontend wants to display articles.
 
 It might send:
 
+```http
 GET /api/articles
+```
+
 
 The backend receives the request, gets the required information from the database, and returns a response, usually as JSON.
 
@@ -78,16 +83,20 @@ It only needs to understand the API.
 
 That separation is one of the most useful things about having an API in the first place.
 
-REST API design starts with resources
+## REST API Design Starts with Resources
+
 
 One thing I keep seeing beginners do is design URLs around actions.
 
 Something like:
 
+```http
 /getAllArticles
 /createArticle
 /updateArticle
 /deleteArticle
+```
+
 
 There's nothing stopping you from making this work.
 
@@ -99,16 +108,22 @@ In this case, the resource is an article.
 
 So we can start with:
 
+```http
 /articles
+```
+
 
 Then use HTTP methods to describe what we want to do with that resource.
 
+```http
 GET    /articles
 POST   /articles
 GET    /articles/123
 PUT    /articles/123
 PATCH  /articles/123
 DELETE /articles/123
+```
+
 
 Now the URLs are doing much less work.
 
@@ -118,7 +133,10 @@ The HTTP method tells us what we're trying to do.
 
 For example:
 
+```http
 GET /articles
+```
+
 
 means:
 
@@ -126,7 +144,10 @@ Give me the articles.
 
 While:
 
+```http
 POST /articles
+```
+
 
 means:
 
@@ -134,7 +155,10 @@ Create a new article.
 
 And:
 
+```http
 DELETE /articles/123
+```
+
 
 means:
 
@@ -142,78 +166,106 @@ Delete article 123.
 
 This sounds like a small difference, but consistent naming becomes increasingly useful as an application grows.
 
-HTTP methods: GET, POST, PUT, PATCH and DELETE
+## HTTP Methods: GET, POST, PUT, PATCH and DELETE
+
 
 These are probably the HTTP methods you'll use most often when building a REST API.
 
-GET
+### GET
+
 
 Used for retrieving data.
 
+```http
 GET /articles
+```
+
 
 or:
 
+```http
 GET /articles/123
+```
+
 
 The first retrieves a collection.
 
 The second retrieves a specific article.
 
-POST
+### POST
+
 
 Generally used to create a new resource.
 
+```http
 POST /articles
+```
+
 
 The request body could contain:
 
+```json
 {
   "title": "REST API Design",
   "content": "Understanding APIs..."
 }
+```
+
 
 The backend validates the data, creates the article, and returns an appropriate response.
 
-PUT
+### PUT
+
 
 PUT is generally used when replacing a resource with a new representation.
 
 For example:
 
+```http
 PUT /articles/123
+```
+
 
 You might send the complete article representation.
 
 This is where things get slightly confusing.
 
-PUT vs PATCH: what's the difference?
+## PUT vs PATCH: What's the Difference?
+
 
 This confused me at first because both are used when modifying resources.
 
 The simplest way I've found to think about it is:
 
-PUT: replace the resource representation.
-
-PATCH: make a partial modification.
+- **PUT:** replace the resource representation.
+- **PATCH:** make a partial modification.
 
 Suppose our article looks like this:
 
+```json
 {
   "id": 123,
   "title": "REST APIs",
   "content": "Learning API design",
   "category": "Backend"
 }
+```
+
 
 Now suppose I only want to change the title.
 
 With PATCH:
 
+```http
 PATCH /articles/123
+```
+
+```json
 {
   "title": "REST API Design"
 }
+```
+
 
 I'm saying:
 
@@ -225,17 +277,22 @@ With PUT, the idea is closer to providing the new representation of the resource
 
 The exact behavior depends on how you implement your API, but understanding this distinction helps avoid treating PUT and PATCH as interchangeable just because both can modify data.
 
-DELETE
+### DELETE
+
 
 Pretty straightforward:
 
+```http
 DELETE /articles/123
+```
+
 
 The server attempts to delete article 123.
 
 If the deletion succeeds and there's nothing useful to return, a 204 No Content response can make sense.
 
-HTTP status codes are part of your API
+## HTTP Status Codes Are Part of Your API
+
 
 This is another thing that is easy to underestimate.
 
@@ -249,7 +306,10 @@ But then you're throwing away useful information that HTTP already gives you.
 
 Consider:
 
+```http
 GET /articles/9999
+```
+
 
 and article 9999 doesn't exist.
 
@@ -261,54 +321,76 @@ immediately tells the client what happened.
 
 Some status codes you'll encounter constantly are:
 
-Status code	Meaning
-200	Request succeeded
-201	Resource was created
-204	Request succeeded with no response body
-400	Bad request
-401	Authentication required/failed
-403	Authenticated but not allowed
-404	Resource not found
-409	Conflict
-500	Unexpected server error
+| Status code | Meaning |
+| --- | --- |
+| `200` | Request succeeded |
+| `201` | Resource was created |
+| `204` | Request succeeded with no response body |
+| `400` | Bad request |
+| `401` | Authentication required/failed |
+| `403` | Authenticated but not allowed |
+| `404` | Resource not found |
+| `409` | Conflict |
+| `500` | Unexpected server error |
+
 
 You don't need to memorize every HTTP status code in existence.
 
 Start with the ones that actually appear in your application.
 
-200 vs 201 vs 204
+### 200 vs 201 vs 204
+
 
 These three are particularly useful when designing APIs.
 
 If I request an article:
 
+```http
 GET /articles/123
+```
+
 
 and it exists:
 
+```text
 200 OK
+```
+
 
 If I create an article:
 
+```http
 POST /articles
+```
+
 
 and the server successfully creates it:
 
+```text
 201 Created
+```
+
 
 If I delete an article and don't need to return anything:
 
+```http
 DELETE /articles/123
+```
+
 
 a possible response is:
 
+```text
 204 No Content
+```
+
 
 They're all successful responses, but they communicate different things.
 
 That's the point.
 
-401 vs 403: one of the most common mistakes
+### 401 vs 403: One of the Most Common Mistakes
+
 
 These two are often mixed up.
 
@@ -316,7 +398,10 @@ They shouldn't be.
 
 Imagine someone tries:
 
+```http
 POST /articles
+```
+
 
 but isn't authenticated.
 
@@ -324,7 +409,10 @@ The server doesn't know who they are.
 
 That's generally:
 
+```text
 401 Unauthorized
+```
+
 
 Now imagine the user is authenticated.
 
@@ -334,17 +422,24 @@ But they try to delete someone else's article.
 
 That's generally:
 
+```text
 403 Forbidden
+```
+
 
 A simple way to remember it:
 
+```text
 401: "Who are you?"
 
 403: "I know who you are, but you're not allowed to do that."
+```
+
 
 That distinction becomes very important once your application has multiple users and permissions.
 
-API request and response design
+## API Request and Response Design
+
 
 Getting the endpoint right is only half the job.
 
@@ -352,17 +447,24 @@ You also need to decide what the API actually sends and receives.
 
 Suppose we have:
 
+```http
 POST /articles
+```
+
 
 The frontend might send:
 
+```json
 {
   "title": "REST API Design",
   "content": "Understanding APIs..."
 }
+```
+
 
 The backend could respond with:
 
+```json
 {
   "id": 123,
   "title": "REST API Design",
@@ -373,6 +475,8 @@ The backend could respond with:
   },
   "createdAt": "2026-08-10T10:30:00Z"
 }
+```
+
 
 The exact structure isn't universal.
 
@@ -382,15 +486,21 @@ This is essentially your API contract.
 
 If the response suddenly changes from:
 
+```json
 {
   "title": "REST API Design"
 }
+```
+
 
 to:
 
+```json
 {
   "article_title": "REST API Design"
 }
+```
+
 
 without the frontend being updated, you've broken that contract.
 
@@ -398,7 +508,8 @@ This is why API design isn't just about URLs.
 
 It's about creating predictable communication between systems.
 
-Path parameters vs query parameters
+## Path Parameters vs Query Parameters
+
 
 Here's another distinction that becomes useful almost immediately.
 
@@ -406,7 +517,10 @@ Suppose we want article number 123.
 
 I'd use:
 
+```http
 GET /articles/123
+```
+
 
 The 123 identifies a specific resource.
 
@@ -414,15 +528,24 @@ That's a path parameter.
 
 Now suppose we want to search articles:
 
+```http
 GET /articles?search=redis
+```
+
 
 Or filter them:
 
+```http
 GET /articles?category=backend
+```
+
 
 Or paginate them:
 
+```http
 GET /articles?page=2&limit=20
+```
+
 
 These are query parameters.
 
@@ -434,13 +557,17 @@ Query parameters modify how you want a collection returned.
 
 It's not a law that every API has to follow exactly this way, but it's a very useful convention.
 
-Pagination: don't return everything
+## Pagination: Don't Return Everything
+
 
 Imagine Elvoret eventually has 500,000 articles.
 
 Someone sends:
 
+```http
 GET /articles
+```
+
 
 Are we really going to return all 500,000?
 
@@ -450,14 +577,21 @@ Apart from the huge response, you're making the backend and database do unnecess
 
 A simple pagination approach could be:
 
+```http
 GET /articles?page=1&limit=20
+```
+
 
 Then:
 
+```http
 GET /articles?page=2&limit=20
+```
+
 
 The response might contain:
 
+```json
 {
   "data": [
     {
@@ -475,6 +609,8 @@ The response might contain:
     "total": 500000
   }
 }
+```
+
 
 For a relatively small application, this is perfectly reasonable.
 
@@ -486,27 +622,37 @@ You don't necessarily need the most complicated solution on day one.
 
 You need a solution appropriate for the problem you actually have, while leaving yourself room to grow.
 
-Consistent API error handling
+## Consistent API Error Handling
+
 
 Another thing that gets messy surprisingly quickly is error responses.
 
 Imagine one endpoint returns:
 
+```json
 {
   "error": "Article not found"
 }
+```
+
 
 Another returns:
 
+```json
 {
   "message": "User doesn't exist"
 }
+```
+
 
 And another:
 
+```json
 {
   "failed": true
 }
+```
+
 
 Technically, all three can work.
 
@@ -516,34 +662,44 @@ I'd rather establish a consistent structure.
 
 For example:
 
+```json
 {
   "error": {
     "code": "ARTICLE_NOT_FOUND",
     "message": "The requested article does not exist."
   }
 }
+```
+
 
 Now the frontend has something predictable to work with.
 
 You can also have different error codes for different situations:
 
+```text
 ARTICLE_NOT_FOUND
 INVALID_ARTICLE_DATA
 UNAUTHORIZED
 FORBIDDEN
 USER_NOT_FOUND
+```
+
 
 The important part isn't the exact naming convention.
 
 It's consistency.
 
-Authentication and authorization are different
+## Authentication and Authorization Are Different
+
 
 This is one of the most important concepts when building APIs with users.
 
 Suppose we have:
 
+```http
 PATCH /articles/123
+```
+
 
 The backend needs to answer two questions.
 
@@ -561,7 +717,10 @@ Suppose User A owns Article 123.
 
 User B is logged in and sends:
 
+```http
 DELETE /articles/123
+```
+
 
 Authentication succeeds.
 
@@ -573,7 +732,8 @@ User B doesn't own Article 123.
 
 So the backend should reject the operation.
 
-Never trust the frontend for authorization
+### Never Trust the Frontend for Authorization
+
 
 This is one principle I want to keep in mind while building Elvoret.
 
@@ -585,7 +745,10 @@ But it isn't security.
 
 Someone can still manually send:
 
+```http
 DELETE /articles/123
+```
+
 
 directly to the API.
 
@@ -593,6 +756,7 @@ The backend must perform the authorization check itself.
 
 Conceptually:
 
+```text
 Request
    ↓
 Is the user authenticated?
@@ -608,6 +772,8 @@ No → 403
 Yes
    ↓
 Perform operation
+```
+
 
 The frontend controls the user experience.
 
@@ -615,12 +781,14 @@ The backend controls access to the resource.
 
 That distinction is easy to miss when you're primarily working on the frontend.
 
-What about JWT?
+### What About JWT?
+
 
 JWT comes up almost immediately when you start learning API authentication.
 
 A simplified flow looks like:
 
+```text
 User logs in
       ↓
 Server verifies credentials
@@ -632,10 +800,15 @@ Client sends token with requests
 Server verifies token
       ↓
 User identified
+```
+
 
 The request might contain:
 
+```http
 Authorization: Bearer <token>
+```
+
 
 But one thing is worth clearing up:
 
@@ -651,24 +824,32 @@ So when someone says:
 
 that's not really the complete picture.
 
-A practical REST API for Elvoret
+## A Practical REST API for Elvoret
+
 
 Putting everything together, a basic article API could look something like this:
 
+```http
 GET     /api/articles
 POST    /api/articles
 GET     /api/articles/:id
 PATCH   /api/articles/:id
 DELETE  /api/articles/:id
+```
+
 
 Then we can add query parameters:
 
+```http
 GET /api/articles?page=2&limit=20
 GET /api/articles?category=backend
 GET /api/articles?search=redis
+```
+
 
 And the server can use appropriate status codes:
 
+```text
 200 → article retrieved
 201 → article created
 204 → article deleted
@@ -677,6 +858,8 @@ And the server can use appropriate status codes:
 403 → insufficient permission
 404 → article doesn't exist
 500 → unexpected server problem
+```
+
 
 Now we have something that isn't just functional.
 
@@ -684,42 +867,49 @@ We have an API that another developer can look at and understand without opening
 
 That's a useful test for API design.
 
-Common REST API design mistakes
+## Common REST API Design Mistakes
+
 
 There are a few mistakes I'd specifically watch for.
 
-1. Designing URLs around actions
-/createArticle
-/getArticle
-/deleteArticle
+1. **Designing URLs around actions**
 
-Instead, think in terms of resources:
+   ```text
+   /createArticle
+   /getArticle
+   /deleteArticle
+   ```
 
-/articles
-/articles/:id
-2. Using 200 OK for everything
+   Instead, think in terms of resources:
 
-Status codes exist for a reason.
+   ```text
+   /articles
+   /articles/:id
+   ```
 
-Use them to communicate the outcome.
+2. **Using `200 OK` for everything**
 
-3. Confusing authentication and authorization
+   Status codes exist for a reason.
 
-A logged-in user isn't automatically allowed to modify every resource.
+   Use them to communicate the outcome.
 
-4. Trusting frontend permissions
+3. **Confusing authentication and authorization**
 
-Hiding a button is not authorization.
+   A logged-in user isn't automatically allowed to modify every resource.
 
-5. Returning inconsistent response structures
+4. **Trusting frontend permissions**
 
-Your frontend shouldn't need a different error-handling strategy for every endpoint.
+   Hiding a button is not authorization.
 
-6. Returning huge datasets
+5. **Returning inconsistent response structures**
 
-Pagination isn't something you should think about only after your API becomes slow.
+   Your frontend shouldn't need a different error-handling strategy for every endpoint.
 
-7. Adding complexity too early
+6. **Returning huge datasets**
+
+   Pagination isn't something you should think about only after your API becomes slow.
+
+7. **Adding complexity too early**
 
 This one is probably the easiest to forget.
 
@@ -731,7 +921,8 @@ A small application doesn't need a distributed architecture just because a diagr
 
 Design for the problem you have, while leaving yourself room to grow.
 
-What I'm taking away from this
+## What I'm Taking Away from This
+
 
 The more I work through REST API design, the less I think it's about memorizing things like:
 
@@ -741,7 +932,7 @@ Those are useful, but they're not the interesting part.
 
 The interesting part is why we're making these decisions.
 
-Why should /articles/123 identify a resource instead of /getArticle?id=123?
+Why should `/articles/123` identify a resource instead of `/getArticle?id=123`?
 
 Why should a missing article return 404?
 
