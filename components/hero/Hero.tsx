@@ -99,7 +99,7 @@ export default function Hero() {
 
                                 <div className="mb-2">
                                     <p className="text-sm font-semibold text-gray-900">
-                                        Join 240+ developers already subscribed
+                                        Join 250+ developers already subscribed
                                     </p>
 
                                     <p className="text-xs text-gray-500">
