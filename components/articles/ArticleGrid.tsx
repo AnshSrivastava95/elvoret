@@ -30,7 +30,7 @@ export default function ArticleGrid() {
 
       {latestArticles.length > 0 ? (
 
-        <div className="mt-10 grid gap-6 sm:gap-8 md:grid-cols-2 xl:grid-cols-3">
+        <div className="mt-10 grid gap-6 sm:gap-8 md:grid-cols-2">
 
           {latestArticles.map((article) => (
             <ArticleCard
