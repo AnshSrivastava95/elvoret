@@ -18,12 +18,11 @@ export default function ArticleContent({ article }: Props) {
     const codeBlocks = articleElement.querySelectorAll("pre");
 
     codeBlocks.forEach((pre, index) => {
-      // Prevent duplicate wrappers/buttons
       if (pre.parentElement?.dataset.codeWrapper === "true") {
         return;
       }
 
-      /* Create wrapper */
+      
 
       const wrapper = document.createElement("div");
 
@@ -32,13 +31,10 @@ export default function ArticleContent({ article }: Props) {
       wrapper.className =
         "relative my-8 overflow-hidden rounded-2xl border border-slate-800 bg-[#0f172a] shadow-xl";
 
-      /* Put PRE inside wrapper */
 
       pre.parentNode?.insertBefore(wrapper, pre);
 
       wrapper.appendChild(pre);
-
-      /* Copy button */
 
       const button = document.createElement("button");
 
@@ -68,8 +64,6 @@ export default function ArticleContent({ article }: Props) {
         hover:bg-slate-700
         active:scale-95
       `;
-
-      /* Copy functionality */
 
       button.addEventListener("click", async () => {
         const code =
@@ -109,8 +103,6 @@ export default function ArticleContent({ article }: Props) {
         });
     };
   }, [article.contentHtml]);
-
-  /* Update button text */
 
   useEffect(() => {
     document
@@ -208,6 +200,9 @@ export default function ArticleContent({ article }: Props) {
         prose-code:text-purple-700
         prose-code:before:content-none
         prose-code:after:content-none
+        [&_pre_code]:bg-transparent
+        [&_pre_code]:px-0
+        [&_pre_code]:py-0
 
         prose-pre:m-0
         prose-pre:max-w-full
