@@ -20,7 +20,7 @@ export default function FeaturedArticle() {
 
           <Link
             href={`/articles/${article.slug}`}
-            className="relative block h-64 overflow-hidden bg-[#f7f3ff] sm:h-72 lg:col-span-2 lg:min-h-[280px]"
+            className="relative block h-72 overflow-hidden bg-[#f7f3ff] sm:h-72 lg:col-span-2 lg:min-h-[280px]"
           >
             <Image
               src={article.image}
