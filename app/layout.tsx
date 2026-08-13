@@ -61,9 +61,7 @@ export const metadata: Metadata = {
   publisher: "Elvoret",
   category: "Technology",
 
-  alternates: {
-    canonical: "https://elvoret.in",
-  },
+  
 
   openGraph: {
     title: "Elvoret - Elevate Your Tomorrow",
