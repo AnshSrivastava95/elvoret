@@ -25,11 +25,16 @@ export async function generateMetadata({
 
   try {
     const article = await getArticleBySlug(slug);
+    const articleUrl = `https://elvoret.in/articles/${article.slug}`;
 
     return {
       title: `${article.title} | Elvoret`,
 
       description: article.description,
+
+      alternates: {
+        canonical: articleUrl,
+      },
 
       keywords: [
         article.category,
@@ -56,7 +61,7 @@ export async function generateMetadata({
 
         description: article.description,
 
-        url: `https://elvoret.in/articles/${article.slug}`,
+        url: articleUrl,
 
         siteName: "Elvoret",
 
