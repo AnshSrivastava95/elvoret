@@ -154,7 +154,7 @@ export default function Navbar() {
 
           {/* Desktop Login Button */}
           <Link
-            href="/login"
+            href="/Login"
             className="
               rounded-xl
               bg-purple-900
@@ -297,7 +297,7 @@ export default function Navbar() {
 
             {/* Mobile Login Button */}
             <Link
-              href="/login"
+              href="/Login"
               onClick={closeMenu}
               className="
                 mt-2
