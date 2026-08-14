@@ -11,6 +11,8 @@ import {
   Play,
   Sparkles,
 } from "lucide-react";
+import Navbar from "@/components/layout/Navbar";
+import Footer from "@/components/layout/Footer";
 
 interface Article {
   slug: string;
@@ -293,6 +295,8 @@ export default function SystemDesignPage() {
 
   if (loading) {
     return (
+        <>
+        <Navbar/>
       <main className="min-h-screen bg-white">
 
         {/* Hero Skeleton */}
@@ -329,6 +333,8 @@ export default function SystemDesignPage() {
         </section>
 
       </main>
+      <Footer/>
+      </>
     );
   }
 
