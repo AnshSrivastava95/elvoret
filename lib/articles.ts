@@ -13,7 +13,7 @@ import rehypeStringify from "rehype-stringify";
 import { visit } from "unist-util-visit";
 import remarkRehype from "remark-rehype";
 
-const contentDirectory = path.join(process.cwd(), "content");
+const contentDirectory = path.join(process.cwd(), "content/articles_content");
 
 export interface Article {
   slug: string;
