@@ -5,6 +5,7 @@ import CategoryCards from "@/components/articles/CategoryCard";
 import AdBanner from "@/components/articles/AdBanner";
 import FeaturedArticle from "@/components/articles/FeautredArticle";
 import ArticleGrid from "@/components/articles/ArticleGrid";
+import Footer from "@/components/layout/Footer";
 
 export default function ArticlesPage() {
   return (
@@ -44,6 +45,7 @@ export default function ArticlesPage() {
         </div>
 
       </section>
+      <Footer/>
     </>
   );
 }
