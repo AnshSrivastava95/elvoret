@@ -84,7 +84,7 @@ export default function Hero() {
                                     href="/tools"
                                     className="rounded-xl border border-gray-300 bg-white px-6 py-3 text-center font-semibold text-gray-900 transition-colors duration-200 hover:border-purple-700 hover:text-purple-700"
                                 >
-                                    Explore AI Tools
+                                    Try AI Tools
                                 </Link>
 
                             </div>
@@ -108,11 +108,7 @@ export default function Hero() {
                                     </p>
                                 </div>
 
-                                <form
-                                    action="#"
-                                    method="POST"
-                                    className="flex w-full flex-col gap-2 sm:flex-row"
-                                >
+                                <div className="flex w-full flex-col gap-2 sm:flex-row">
                                     <input
                                         type="email"
                                         name="email"
@@ -121,13 +117,15 @@ export default function Hero() {
                                         className="min-w-0 flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100"
                                     />
 
-                                    <button
-                                        type="submit"
-                                        className="rounded-xl bg-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors duration-200 hover:bg-purple-800"
+                                    <a
+                                        href="https://www.linkedin.com/build-relation/newsletter-follow?entityUrn=7485248252234330112"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-block rounded-xl bg-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors duration-200 hover:bg-purple-800 text-center whitespace-nowrap"
                                     >
                                         Join Newsletter
-                                    </button>
-                                </form>
+                                    </a>
+                                </div>
 
                             </div>
                         </div>
@@ -150,11 +148,7 @@ export default function Hero() {
                                     </p>
                                 </div>
 
-                                <form
-                                    action="#"
-                                    method="POST"
-                                    className="flex w-full flex-col gap-2 sm:flex-row"
-                                >
+                                <div className="flex w-full flex-col gap-2 sm:flex-row">
                                     <input
                                         type="email"
                                         name="email"
@@ -163,13 +157,15 @@ export default function Hero() {
                                         className="min-w-0 flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-purple-600 focus:ring-2 focus:ring-purple-100"
                                     />
 
-                                    <button
-                                        type="submit"
-                                        className="rounded-xl bg-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors duration-200 hover:bg-purple-800"
+                                    <a
+                                        href="https://www.linkedin.com/build-relation/newsletter-follow?entityUrn=7485248252234330112"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-block rounded-xl bg-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors duration-200 hover:bg-purple-800 text-center whitespace-nowrap"
                                     >
                                         Join Newsletter
-                                    </button>
-                                </form>
+                                    </a>
+                                </div>
 
                             </div>
                         </div>
