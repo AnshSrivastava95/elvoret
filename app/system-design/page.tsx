@@ -3,21 +3,22 @@ import fs from "fs";
 import path from "path";
 import matter from "gray-matter";
 
-// Define the structure of a system design article
+
 interface ArticleMeta {
   title: string;
   description: string;
+  image:string
   level: "Beginner" | "Intermediate" | "Advanced";
   category: string;
   time: string;
   slug: string;
 }
 
-// Function to read all MDX files from the content folder
+
 function getAllSystemDesignArticles(): ArticleMeta[] {
   const contentDirectory = path.join(process.cwd(), "content/system-design");
   
-  // If directory doesn't exist yet, return empty array
+  
   if (!fs.existsSync(contentDirectory)) {
     return [];
   }
@@ -47,7 +48,7 @@ function getAllSystemDesignArticles(): ArticleMeta[] {
 export default function SystemDesignPage() {
   const articles = getAllSystemDesignArticles();
 
-  // Group articles by category dynamically
+  
   const groupedArticles = articles.reduce((acc, article) => {
     if (!acc[article.category]) {
       acc[article.category] = [];
@@ -58,7 +59,7 @@ export default function SystemDesignPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Header Section */}
+      
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="max-w-3xl">
           <div className="inline-flex items-center rounded-full bg-purple-100 px-4 py-1.5 mb-4">
@@ -74,7 +75,7 @@ export default function SystemDesignPage() {
           </p>
         </div>
 
-        {/* Dynamic Categories Grid */}
+        
         <div className="mt-12 space-y-16">
           {Object.keys(groupedArticles).length === 0 ? (
             <div className="rounded-2xl border border-dashed border-gray-300 p-12 text-center">
@@ -127,7 +128,7 @@ export default function SystemDesignPage() {
           )}
         </div>
 
-        {/* Call to Action Banner */}
+        
         <div className="mt-20 rounded-3xl bg-purple-900 px-6 py-10 sm:p-12 text-center text-white">
           <h2 className="text-2xl font-bold sm:text-3xl">Ready to prep for interviews or scale your app?</h2>
           <p className="mt-2 text-purple-200 text-sm sm:text-base max-w-xl mx-auto">
