@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function AboutPage() {
   return (
-    <div className="bg-[#0B0F19] text-slate-100 font-sans antialiased min-h-screen py-16 px-6">
+    <div className="bg-white text-slate-100 font-sans antialiased min-h-screen py-16 px-6">
       <main className="max-w-4xl mx-auto">
         
         {/* Page Title Header */}
@@ -24,7 +24,7 @@ export default function AboutPage() {
           
           {/* Photo Frame */}
           <div className="w-40 h-40 md:w-48 md:h-48 rounded-2xl overflow-hidden border-2 border-indigo-500/30 shadow-xl flex-shrink-0 bg-slate-800 relative">
-            <img 
+            <img
               src="/profile.png" 
               alt="Ansh Srivastava" 
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
