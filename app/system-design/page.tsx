@@ -36,6 +36,7 @@ function getAllSystemDesignArticles(): ArticleMeta[] {
         slug: filename.replace(/\.(mdx|md)$/, ""),
         title: data.title || "Untitled",
         description: data.description || "",
+        image: data.image || "",
         level: data.level || "Beginner",
         category: data.category || "General",
         time: data.time || "5 min read",
