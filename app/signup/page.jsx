@@ -13,16 +13,15 @@ export default function SignUpPage() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  const handleSignUp = async (e) => {
+  const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMessage('');
     setLoading(true);
 
-    // Call Supabase Sign Up API
     const { data, error } = await supabase.auth.signUp({
-      email: email,
-      password: password,
+      email: email.trim(),
+      password,
     });
 
     setLoading(false);
@@ -34,14 +33,14 @@ export default function SignUpPage() {
         router.push('/');
         router.refresh();
       } else {
-        setMessage('Registration successful! Please check your email to verify your account before logging in.');
+        setMessage('Registration successful! Please check your email to verify your account.');
       }
     }
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-8 shadow-xl border border-gray-100">
+    <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-12">
+      <div className="w-full max-w-md space-y-6 rounded-2xl bg-white p-6 sm:p-8 shadow-xl border border-gray-100">
         
         <div className="text-center">
           <h2 className="text-2xl font-bold text-purple-900">Create an Account</h2>
@@ -68,7 +67,9 @@ export default function SignUpPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="mt-1 w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 focus:outline-none focus:border-purple-600 focus:bg-white transition"
+              autoCapitalize="none"
+              autoComplete="email"
+              className="mt-1 w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 focus:outline-none focus:border-purple-600 focus:bg-white transition text-base"
               placeholder="you@example.com"
             />
           </div>
@@ -81,7 +82,8 @@ export default function SignUpPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={6}
-              className="mt-1 w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 focus:outline-none focus:border-purple-600 focus:bg-white transition"
+              autoComplete="new-password"
+              className="mt-1 w-full p-3 bg-gray-50 rounded-xl border border-gray-200 text-gray-900 focus:outline-none focus:border-purple-600 focus:bg-white transition text-base"
               placeholder="••••••••"
             />
             <p className="mt-1 text-xs text-gray-400">Must be at least 6 characters long</p>
@@ -90,7 +92,7 @@ export default function SignUpPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 bg-purple-900 rounded-xl font-semibold text-white hover:bg-purple-800 transition disabled:opacity-50"
+            className="w-full py-3 bg-purple-900 rounded-xl font-semibold text-white hover:bg-purple-800 transition disabled:opacity-50 active:scale-[0.99] cursor-pointer"
           >
             {loading ? 'Creating account...' : 'Sign Up'}
           </button>
