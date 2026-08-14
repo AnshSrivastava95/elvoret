@@ -295,8 +295,6 @@ export default function SystemDesignPage() {
 
   if (loading) {
     return (
-        <>
-        <Navbar/>
       <main className="min-h-screen bg-white">
 
         {/* Hero Skeleton */}
@@ -333,8 +331,6 @@ export default function SystemDesignPage() {
         </section>
 
       </main>
-      <Footer/>
-      </>
     );
   }
 
@@ -376,6 +372,8 @@ export default function SystemDesignPage() {
   }
 
   return (
+    <>
+    <Navbar/>
     <main className="min-h-screen bg-white">
 
       {/* ==================================================== */}
@@ -916,5 +914,7 @@ export default function SystemDesignPage() {
       )}
 
     </main>
+    <Footer/>
+    </>
   );
 }
