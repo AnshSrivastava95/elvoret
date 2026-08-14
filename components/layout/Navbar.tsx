@@ -154,7 +154,7 @@ export default function Navbar() {
 
           {/* Desktop Login Button */}
           <Link
-            href="/Login"
+            href="/login"
             className="
               rounded-xl
               bg-purple-900
