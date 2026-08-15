@@ -25,7 +25,7 @@ const columns = [
     title: "ELVORET",
     links: [
       { name: "About", href: "/about" },
-      { name: "Newsletter", href: "/newsletter" },
+      { name: "Refund", href: "/refund" },
       { name: "Contact", href: "/contact" },
       { name: "Support", href: "/support" },
     ],
