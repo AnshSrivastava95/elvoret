@@ -19,7 +19,7 @@ export default function Hero() {
                         <div className="order-1 w-full lg:order-none">
                             <div className="inline-flex items-center rounded-full bg-purple-100 px-4 py-2">
                                 <span className="text-xs font-semibold uppercase tracking-wide text-purple-700 sm:text-sm">
-                                    Elevate Your Tomorrow.
+                                    Less Planning. More Progress.
                                 </span>
                             </div>
                         </div>
@@ -28,13 +28,11 @@ export default function Hero() {
 
                         <div className="order-2 w-full lg:order-none">
                             <h1 className="mt-3 max-w-xl text-4xl font-extrabold leading-[1.02] tracking-tight text-gray-900 sm:text-5xl lg:mt-5 lg:text-[52px]">
-                                Everything a
+                                Stop Planning.
                                 <br />
                                 <span className="text-purple-700">
-                                    Software Engineer
+                                    Start Learning.
                                 </span>
-                                <br />
-                                Needs
                             </h1>
                         </div>
 
@@ -42,9 +40,10 @@ export default function Hero() {
 
                         <div className="order-3 w-full lg:order-none">
                             <p className="mt-3 max-w-xl text-base leading-7 text-gray-600 sm:text-lg sm:leading-8">
-                                Learn, build, and grow with in-depth articles,
-                                AI tools, real-world projects, and the latest
-                                tech insights.
+                                Stop worrying about what to learn next.
+                                Elvoret brings together the content, tools,
+                                and practice you need to keep becoming a
+                                better software engineer.
                             </p>
                         </div>
 
@@ -77,14 +76,14 @@ export default function Hero() {
                                     href="/articles"
                                     className="rounded-xl bg-purple-700 px-6 py-3 text-center font-semibold text-white shadow-lg transition-colors duration-200 hover:bg-purple-800"
                                 >
-                                    Explore Articles →
+                                    Start Learning →
                                 </Link>
 
                                 <Link
                                     href="/tools"
                                     className="rounded-xl border border-gray-300 bg-white px-6 py-3 text-center font-semibold text-gray-900 transition-colors duration-200 hover:border-purple-700 hover:text-purple-700"
                                 >
-                                    Try AI Tools
+                                    Explore Elvoret
                                 </Link>
 
                             </div>
@@ -121,7 +120,7 @@ export default function Hero() {
                                         href="https://www.linkedin.com/build-relation/newsletter-follow?entityUrn=7485248252234330112"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-block rounded-xl bg-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors duration-200 hover:bg-purple-800 text-center whitespace-nowrap"
+                                        className="inline-block rounded-xl bg-purple-700 px-6 py-3 text-center text-sm font-semibold whitespace-nowrap text-white shadow-md transition-colors duration-200 hover:bg-purple-800"
                                     >
                                         Join Newsletter
                                     </a>
@@ -161,7 +160,7 @@ export default function Hero() {
                                         href="https://www.linkedin.com/build-relation/newsletter-follow?entityUrn=7485248252234330112"
                                         target="_blank"
                                         rel="noopener noreferrer"
-                                        className="inline-block rounded-xl bg-purple-700 px-6 py-3 text-sm font-semibold text-white shadow-md transition-colors duration-200 hover:bg-purple-800 text-center whitespace-nowrap"
+                                        className="inline-block rounded-xl bg-purple-700 px-6 py-3 text-center text-sm font-semibold whitespace-nowrap text-white shadow-md transition-colors duration-200 hover:bg-purple-800"
                                     >
                                         Join Newsletter
                                     </a>

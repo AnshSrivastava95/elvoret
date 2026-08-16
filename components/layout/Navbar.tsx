@@ -15,7 +15,6 @@ import {
   X,
   Trophy,
   Code2,
-  Map,
   LogIn,
   User,
   BookMarked,
@@ -46,11 +45,6 @@ const navItems = [
     name: "CP",
     href: "/cp",
     icon: Trophy,
-  },
-  {
-    name: "Roadmaps",
-    href: "/roadmaps",
-    icon: Map,
   },
   {
     name: "Tools",
@@ -122,24 +116,16 @@ export default function Navbar() {
     function handleClickOutside(event: MouseEvent) {
       if (
         accountRef.current &&
-        !accountRef.current.contains(
-          event.target as Node
-        )
+        !accountRef.current.contains(event.target as Node)
       ) {
         setAccountOpen(false);
       }
     }
 
-    document.addEventListener(
-      "mousedown",
-      handleClickOutside
-    );
+    document.addEventListener("mousedown", handleClickOutside);
 
     return () => {
-      document.removeEventListener(
-        "mousedown",
-        handleClickOutside
-      );
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
@@ -168,8 +154,7 @@ export default function Navbar() {
   // User information
   // ==========================================================
 
-  const userEmail =
-    user?.email || "User";
+  const userEmail = user?.email || "User";
 
   const userName =
     user?.user_metadata?.full_name ||
@@ -177,8 +162,7 @@ export default function Navbar() {
     user?.email?.split("@")[0] ||
     "User";
 
-  const avatarLetter =
-    userName.charAt(0).toUpperCase();
+  const avatarLetter = userName.charAt(0).toUpperCase();
 
   return (
     <nav className="sticky top-0 z-50 border-b border-gray-200 bg-white/95 backdrop-blur">
@@ -348,6 +332,7 @@ export default function Navbar() {
                     }
                   `}
                 />
+
               </button>
 
               {/* ================================================= */}

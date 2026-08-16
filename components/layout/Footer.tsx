@@ -13,21 +13,21 @@ const columns = [
     ],
   },
   {
-    title: "LEARN",
+    title: "LEARN & BUILD",
     links: [
-      { name: "Roadmaps", href: "/roadmaps" },
       { name: "Playground", href: "/playground" },
       { name: "Developer Tools", href: "/tools" },
       { name: "Tech News", href: "/news" },
+      { name: "CareerForge", href: "/newsletter" },
     ],
   },
   {
     title: "ELVORET",
     links: [
       { name: "About", href: "/about" },
-      { name: "Refund", href: "/refund" },
       { name: "Contact", href: "/contact" },
       { name: "Support", href: "/support" },
+      { name: "Refund Policy", href: "/refund" },
     ],
   },
 ];
@@ -79,8 +79,9 @@ export default function Footer() {
             </Link>
 
             <p className="mt-5 max-w-sm text-sm leading-6 text-gray-600 sm:text-base">
-              Learn, practice, build, and grow with practical resources
-              designed for the modern software engineer.
+              Stop planning and start learning. Elvoret brings together the
+              content, tools, and practice you need to keep becoming a better
+              software engineer.
             </p>
 
             {/* Socials */}
@@ -168,10 +169,13 @@ export default function Footer() {
 
             <span className="text-gray-300">•</span>
 
-            <span>Built for developers.</span>
+            <span>
+              Built for continuous learning.
+            </span>
           </div>
 
           <div className="flex flex-wrap gap-x-5 gap-y-2">
+
             <Link
               href="/privacy"
               className="hover:text-purple-700"
@@ -192,6 +196,7 @@ export default function Footer() {
             >
               Cookie Policy
             </Link>
+
           </div>
 
         </div>

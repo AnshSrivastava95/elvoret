@@ -2,7 +2,6 @@ import Navbar from "@/components/layout/Navbar";
 import Hero from "@/components/hero/Hero";
 import CategoryCard from "@/components/home/CategoryCard";
 import HomeAdBanner from "@/components/home/HomeAddBanner";
-import RoadmapSection from "@/components/home/RoadmapSection";
 import CPSection from "@/components/home/CpSection";
 import ToolsSection from "@/components/home/ToolSection";
 import NewsSection from "@/components/home/NewsSection";
@@ -15,11 +14,13 @@ export default function Home(){
       <Hero />
       <HomeAdBanner/>
       <CategoryCard/>
+      <HomeAdBanner/>
       <CPSection/>
-      <RoadmapSection/>
+      <HomeAdBanner/>
       <ToolsSection/>
       <HomeAdBanner/>
       <NewsSection/>
+      <HomeAdBanner/>
       <Footer/>
     </div>
   );
