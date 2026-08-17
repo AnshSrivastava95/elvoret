@@ -1,0 +1,606 @@
+---
+title: "Two Sum"
+slug: "two-sum"
+source: "LeetCode"
+sourceId: "1"
+sourceUrl: "https://leetcode.com/problems/two-sum/"
+difficulty: "Easy"
+topics:
+  - Arrays
+  - Hash Map
+pattern: "Hash Map"
+date: "2026-08-17"
+featured: true
+description: "Find two numbers that add up to a target and learn how to recognize when a hash map can turn repeated searching into constant-time lookup."
+hints:
+  - "Start with the most obvious approach. What happens if you compare every possible pair?"
+  - "For a number x, what other number would you need to reach the target?"
+  - "Instead of searching the array again for that number, can you remember the values you have already seen?"
+complexity:
+  time: "O(n)"
+  space: "O(n)"
+---
+
+# Two Sum
+
+## The Problem
+
+You are given an array of integers `nums` and an integer `target`.
+
+Find two different elements in the array whose values add up to `target`, and return their indices.
+
+You may assume that exactly one valid answer exists.
+
+### Example 1
+
+```text
+Input:
+nums = [2, 7, 11, 15]
+target = 9
+
+Output:
+[0, 1]
+```
+
+Because:
+
+```text
+2 + 7 = 9
+```
+
+### Example 2
+
+```text
+Input:
+nums = [3, 2, 4]
+target = 6
+
+Output:
+[1, 2]
+```
+
+Because:
+
+```text
+2 + 4 = 6
+```
+
+### Example 3
+
+```text
+Input:
+nums = [3, 3]
+target = 6
+
+Output:
+[0, 1]
+```
+
+---
+
+## Before You Look at the Hints
+
+Try this problem yourself first.
+
+Don't immediately search for the optimal solution.
+
+Start with the simplest approach you can think of.
+
+Write the code. Run it.
+
+Then ask yourself:
+
+> **What makes my solution slow?**
+
+That question is more important than getting the answer quickly.
+
+---
+<!-- SOLUTION_START -->
+
+## My First Thought
+
+My first instinct with this problem is the brute-force solution.
+
+And that's actually a perfectly reasonable place to start.
+
+We need to find two numbers whose sum equals the target.
+
+So the most straightforward idea is:
+
+1. Pick a number.
+2. Compare it with every number after it.
+3. Check whether their sum equals the target.
+4. Continue until we find the answer.
+
+For example:
+
+```text
+[2, 7, 11, 15]
+```
+
+We could start with `2`:
+
+```text
+2 + 7
+2 + 11
+2 + 15
+```
+
+Then move to `7`:
+
+```text
+7 + 11
+7 + 15
+```
+
+It works.
+
+But there is something bothering me about this approach.
+
+We're repeatedly searching through values that we've already passed.
+
+That feels unnecessary.
+
+---
+
+## Where the Problem Gets Interesting
+
+Suppose we're currently looking at:
+
+```text
+nums[i] = 7
+```
+
+and the target is:
+
+```text
+9
+```
+
+What number do we actually need?
+
+We can calculate it:
+
+```text
+9 - 7 = 2
+```
+
+So instead of asking:
+
+> "Which number should I pair with 7?"
+
+we can ask:
+
+> **"Have I already seen 2?"**
+
+That is a much better question.
+
+And this is the key observation behind the optimized solution.
+
+---
+
+## The Important Shift in Thinking
+
+The brute-force solution asks:
+
+> **Which other number should I try?**
+
+The optimized solution asks:
+
+> **What number do I need, and have I already seen it?**
+
+We don't need to repeatedly search the array.
+
+We only need a way to remember the values we've already encountered.
+
+This is exactly where a **hash map** becomes useful.
+
+---
+
+## The Hash Map Approach
+
+We'll maintain a hash map containing:
+
+```text
+number → index
+```
+
+Let's walk through:
+
+```text
+nums = [2, 7, 11, 15]
+target = 9
+```
+
+### Step 1 — We See 2
+
+Current value:
+
+```text
+2
+```
+
+Calculate the complement:
+
+```text
+9 - 2 = 7
+```
+
+Have we seen `7`?
+
+No.
+
+So we remember `2`:
+
+```text
+2 → 0
+```
+
+### Step 2 — We See 7
+
+Current value:
+
+```text
+7
+```
+
+Calculate:
+
+```text
+9 - 7 = 2
+```
+
+Have we seen `2`?
+
+Yes.
+
+Our map tells us:
+
+```text
+2 → 0
+```
+
+The current index is `1`, so:
+
+```text
+[0, 1]
+```
+
+is our answer.
+
+---
+
+## Why This Works
+
+For every number:
+
+```text
+complement = target - current
+```
+
+Then we ask:
+
+```text
+Does the complement already exist?
+```
+
+If it does, we found our pair.
+
+If it doesn't, we store the current number and continue.
+
+The algorithm becomes:
+
+```text
+current number
+      ↓
+calculate complement
+      ↓
+have we seen it?
+   ↙          ↘
+ yes           no
+  ↓             ↓
+answer       remember
+```
+
+---
+
+## Why Brute Force Isn't Enough
+
+The brute-force solution checks every possible pair.
+
+For `n` elements, the number of comparisons grows quadratically.
+
+Therefore its time complexity is:
+
+```text
+O(n²)
+```
+
+The hash map approach makes a single pass through the array while performing fast lookups:
+
+```text
+O(n)
+```
+
+average time complexity.
+
+We're using extra memory to achieve that improvement.
+
+---
+
+## The Pattern
+
+This is a classic **Hash Map** pattern.
+
+Whenever you're processing data and repeatedly asking:
+
+> "Have I already seen this?"
+
+you should start thinking about a hash map or hash set.
+
+The underlying idea is:
+
+> **Store useful information now so you don't have to search for it again later.**
+
+---
+
+## Step-by-Step Algorithm
+
+1. Create a hash map storing `number → index`.
+2. Traverse the array from left to right.
+3. Calculate `complement = target - current`.
+4. Check whether the complement already exists.
+5. If it exists, return its index and the current index.
+6. Otherwise, store the current number and continue.
+
+---
+
+## C++ Solution
+
+```cpp
+#include <vector>
+#include <unordered_map>
+
+using namespace std;
+
+vector<int> twoSum(vector<int>& nums, int target) {
+    unordered_map<int, int> seen;
+
+    for (int i = 0; i < nums.size(); i++) {
+        int complement = target - nums[i];
+
+        if (seen.find(complement) != seen.end()) {
+            return {
+                seen[complement],
+                i
+            };
+        }
+
+        seen[nums[i]] = i;
+    }
+
+    return {};
+}
+```
+
+---
+
+## Walking Through the Code
+
+First, we create the hash map:
+
+```cpp
+unordered_map<int, int> seen;
+```
+
+We're storing:
+
+```text
+number → index
+```
+
+Then we iterate through the array:
+
+```cpp
+for (int i = 0; i < nums.size(); i++)
+```
+
+For every number, calculate what we need:
+
+```cpp
+int complement = target - nums[i];
+```
+
+Now check whether we've already encountered that number:
+
+```cpp
+if (seen.find(complement) != seen.end())
+```
+
+If it exists, we have our answer:
+
+```cpp
+return {
+    seen[complement],
+    i
+};
+```
+
+Otherwise, remember the current number:
+
+```cpp
+seen[nums[i]] = i;
+```
+
+---
+
+## Complexity
+
+### Time Complexity
+
+```text
+O(n)
+```
+
+We traverse the array once. Hash map lookup and insertion are `O(1)` on average.
+
+### Space Complexity
+
+```text
+O(n)
+```
+
+In the worst case, we may store almost every element in the hash map.
+
+---
+
+## What I Want You to Remember
+
+Don't memorize:
+
+```cpp
+unordered_map<int, int>
+```
+
+The syntax will become familiar with practice.
+
+Instead, remember the question that unlocked the problem:
+
+> **For the value I'm looking at right now, what value do I need to complete the target?**
+
+Then ask:
+
+> **Have I already seen it?**
+
+That thought process is much more valuable than memorizing the Two Sum solution.
+
+---
+
+## A Common Mistake
+
+A common mistake when practicing DSA is immediately looking for the optimal solution.
+
+You see the problem.
+
+You recognize that it's Two Sum.
+
+You remember the hash map solution.
+
+You write it.
+
+Accepted.
+
+Done.
+
+But you haven't necessarily learned much.
+
+When you're learning, allow yourself to struggle with the brute-force approach first.
+
+Then ask:
+
+> **Why is this solution slower than it needs to be?**
+
+That question is often where the real learning happens.
+
+---
+
+## Another Important Lesson
+
+The optimized solution isn't just about knowing hash maps.
+
+It's about changing the question.
+
+Instead of:
+
+```text
+Find two numbers.
+```
+
+we think:
+
+```text
+For this number, what number would complete the target?
+```
+
+Then:
+
+```text
+Have I already seen that number?
+```
+
+Good algorithms often come from asking a better question.
+
+---
+
+## Where You Can See This Pattern Again
+
+The same general idea appears in problems involving:
+
+- Frequencies
+- Duplicate detection
+- Complements
+- Fast membership checks
+- Grouping
+- Prefix sums
+- Counting occurrences
+
+The implementation won't always look like Two Sum.
+
+But the underlying principle is similar:
+
+> **Trade some memory for faster information lookup.**
+
+---
+
+## Your Next Challenge
+
+Try another problem that uses a similar way of thinking.
+
+### Valid Anagram
+
+Ask yourself:
+
+> **Can I store information about the characters I've already seen?**
+
+Try solving it yourself before looking for the solution.
+
+---
+
+## Final Takeaway
+
+Two Sum is often introduced as an easy problem.
+
+But the important lesson isn't the problem itself.
+
+It's the transition:
+
+```text
+Brute Force
+    ↓
+Identify repeated work
+    ↓
+Ask a better question
+    ↓
+Store useful information
+    ↓
+Fast lookup
+    ↓
+O(n) solution
+```
+
+That way of thinking is what you want to carry into harder problems.
+
+**Don't memorize the solution.**
+
+**Learn to recognize the reasoning that produced it.**
+
+---
+
+## Source
+
+This problem is based on **LeetCode #1 — Two Sum**.
+
+The problem statement and examples on Elvoret are written in our own words.
+
+The explanation and solution presented here are educational material focused on the reasoning and problem-solving process.
+<!-- SOLUTION_END -->

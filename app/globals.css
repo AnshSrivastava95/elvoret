@@ -13,3 +13,350 @@
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
+
+/* =========================================================
+   ELVORET CP PLATFORM
+   ========================================================= */
+
+.cp-section {
+  margin-top: 4.5rem;
+}
+
+.cp-section:first-child {
+  margin-top: 0;
+}
+
+
+/* =========================================================
+   MDX CONTENT
+   ========================================================= */
+
+.cp-content {
+  color: #475569;
+  font-size: 1rem;
+  line-height: 1.9;
+}
+
+.cp-content > * + * {
+  margin-top: 1.35rem;
+}
+
+.cp-content h1,
+.cp-content h2,
+.cp-content h3,
+.cp-content h4 {
+  color: #0f172a;
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+
+.cp-content h1 {
+  margin-top: 3rem;
+  font-size: 2rem;
+  line-height: 1.2;
+}
+
+.cp-content h2 {
+  margin-top: 2.75rem;
+  font-size: 1.55rem;
+  line-height: 1.3;
+}
+
+.cp-content h3 {
+  margin-top: 2.25rem;
+  font-size: 1.2rem;
+}
+
+.cp-content p {
+  max-width: 760px;
+}
+
+.cp-content strong {
+  color: #172033;
+  font-weight: 700;
+}
+
+.cp-content em {
+  color: #334155;
+}
+
+.cp-content a {
+  color: #7c3aed;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.cp-content a:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   LISTS
+   ========================================================= */
+
+.cp-content ul,
+.cp-content ol {
+  padding-left: 1.5rem;
+  max-width: 760px;
+}
+
+.cp-content ul {
+  list-style-type: disc;
+}
+
+.cp-content ol {
+  list-style-type: decimal;
+}
+
+.cp-content li {
+  padding-left: 0.35rem;
+  margin-top: 0.55rem;
+}
+
+
+/* =========================================================
+   INLINE CODE
+   ========================================================= */
+
+.cp-content :not(pre) > code {
+  border: 1px solid #e9d5ff;
+  border-radius: 0.45rem;
+  background: #faf5ff;
+  padding: 0.15rem 0.4rem;
+  color: #6d28d9;
+  font-family:
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+  font-size: 0.88em;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   CODE BLOCK
+   ========================================================= */
+
+.cp-content pre {
+  position: relative;
+  overflow-x: auto;
+
+  margin-top: 1.5rem;
+
+  border: 1px solid #202938;
+  border-radius: 1rem;
+
+  background: #0b0f19;
+
+  padding: 1.35rem 1.5rem;
+
+  box-shadow:
+    0 10px 30px rgba(15, 23, 42, 0.08);
+
+  -webkit-overflow-scrolling: touch;
+}
+
+.cp-content pre code {
+  display: block;
+
+  color: #e5e7eb;
+
+  font-family:
+    "JetBrains Mono",
+    "Fira Code",
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+
+  font-size: 0.86rem;
+  line-height: 1.8;
+
+  white-space: pre;
+}
+
+
+/* =========================================================
+   BLOCKQUOTE
+   ========================================================= */
+
+.cp-content blockquote {
+  margin: 2rem 0;
+
+  border-left: 3px solid #8b5cf6;
+
+  border-radius: 0 0.75rem 0.75rem 0;
+
+  background: #faf5ff;
+
+  padding: 1rem 1.25rem;
+
+  color: #5b21b6;
+}
+
+.cp-content blockquote p {
+  margin: 0;
+}
+
+
+/* =========================================================
+   HORIZONTAL RULE
+   ========================================================= */
+
+.cp-content hr {
+  margin: 3rem 0;
+
+  border: 0;
+  border-top: 1px solid #e5e7eb;
+}
+
+
+/* =========================================================
+   EXAMPLE BLOCKS
+   ========================================================= */
+
+.cp-example {
+  overflow-x: auto;
+
+  border: 1px solid #1f2937;
+
+  border-radius: 0.75rem;
+
+  background: #0b0f19;
+
+  padding: 1rem 1.1rem;
+
+  color: #e5e7eb;
+
+  font-family:
+    "JetBrains Mono",
+    "Fira Code",
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+
+  font-size: 0.82rem;
+  line-height: 1.7;
+
+  white-space: pre-wrap;
+}
+
+
+/* =========================================================
+   SCROLLBAR
+   ========================================================= */
+
+.cp-content pre::-webkit-scrollbar,
+.cp-example::-webkit-scrollbar {
+  height: 8px;
+}
+
+.cp-content pre::-webkit-scrollbar-track,
+.cp-example::-webkit-scrollbar-track {
+  background: #111827;
+}
+
+.cp-content pre::-webkit-scrollbar-thumb,
+.cp-example::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: #374151;
+}
+
+.cp-content pre::-webkit-scrollbar-thumb:hover,
+.cp-example::-webkit-scrollbar-thumb:hover {
+  background: #4b5563;
+}
+
+
+/* =========================================================
+   CODE EDITOR
+   ========================================================= */
+
+.cp-editor {
+  min-height: 430px;
+
+  width: 100%;
+
+  resize: vertical;
+
+  border: 0;
+  outline: none;
+
+  background: #0b0f19;
+
+  padding: 1.5rem 1.75rem;
+
+  color: #e5e7eb;
+
+  font-family:
+    "JetBrains Mono",
+    "Fira Code",
+    ui-monospace,
+    SFMono-Regular,
+    Menlo,
+    Monaco,
+    Consolas,
+    monospace;
+
+  font-size: 0.875rem;
+
+  line-height: 1.8;
+
+  tab-size: 4;
+
+  caret-color: #a78bfa;
+}
+
+.cp-editor::selection {
+  background: rgba(124, 58, 237, 0.35);
+}
+
+.cp-editor::placeholder {
+  color: #4b5563;
+}
+
+
+/* =========================================================
+   MOBILE
+   ========================================================= */
+
+@media (max-width: 640px) {
+
+  .cp-section {
+    margin-top: 3.5rem;
+  }
+
+  .cp-content {
+    font-size: 0.95rem;
+    line-height: 1.8;
+  }
+
+  .cp-content h2 {
+    font-size: 1.4rem;
+  }
+
+  .cp-content pre {
+    border-radius: 0.8rem;
+    padding: 1rem;
+  }
+
+  .cp-content pre code {
+    font-size: 0.78rem;
+  }
+
+  .cp-editor {
+    min-height: 350px;
+    padding: 1.25rem;
+    font-size: 0.78rem;
+  }
+
+}

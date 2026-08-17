@@ -1,0 +1,2177 @@
+---
+title: "Load Balancer in System Design: How Load Balancing Works"
+description: "Learn how load balancers work in system design, including Layer 4 vs Layer 7 load balancing, algorithms, health checks, high availability, sticky sessions, TLS termination, real-world examples, and scaling."
+level: "Beginner"
+category: "Fundamentals"
+time: "12 min read"
+image: "/load-balancer.png"
+keywords:
+  - load balancer
+  - load balancing
+  - load balancer in system design
+  - what is a load balancer
+  - how load balancing works
+  - load balancing algorithms
+  - reverse proxy
+  - system design
+  - horizontal scaling
+  - high availability
+  - server scalability
+  - health checks
+  - sticky sessions
+  - TLS termination
+---
+
+# Load Balancer Explained: How Load Balancing Works in System Design
+
+You have already seen why **horizontal scaling** is so important.
+
+Instead of making one server bigger and bigger, we add more servers:
+
+```text
+                    ┌───────────────┐
+Users ─────────────►│    Server     │
+                    └───────────────┘
+
+                 becomes
+
+                    ┌───────────────┐
+Users ─────────────►│    Server 1   │
+                    └───────────────┘
+                    ┌───────────────┐
+              ┌────►│    Server 2   │
+              │     └───────────────┘
+              │     ┌───────────────┐
+              └────►│    Server 3   │
+                    └───────────────┘
+```
+
+But this immediately creates a new problem:
+
+> **Who decides which server should receive each request?**
+
+That is where the **load balancer** comes in.
+
+A load balancer sits between clients and backend servers and intelligently distributes incoming traffic across multiple healthy servers.
+
+It sounds simple.
+
+But a production load balancer does much more than "send request 1 to server 1 and request 2 to server 2."
+
+It can detect failed servers, terminate TLS, route requests based on domains or paths, maintain session affinity, protect backend servers, perform health checks, and become a critical part of a highly available architecture.
+
+In this article, we will build the idea from first principles and then go deep into how load balancing actually works.
+
+In this article, we will build the idea from first principles and then go deep into how load balancing actually works.
+
+> **Coming from our previous system design article?** Before diving into load balancers, read [Horizontal Scaling vs Vertical Scaling: Scaling Basics](https://www.elvoret.in/system-design/scaling-basics) to understand why applications move from a single server to multiple servers in the first place.
+
+---
+
+## What Is a Load Balancer?
+
+A **load balancer** is a component that receives incoming network requests and distributes them across multiple backend servers.
+
+A simple architecture looks like this:
+
+```text
+                         Internet
+                            │
+                            ▼
+                    ┌────────────────┐
+                    │ Load Balancer  │
+                    └───────┬────────┘
+                            │
+              ┌─────────────┼─────────────┐
+              ▼             ▼             ▼
+        ┌──────────┐  ┌──────────┐  ┌──────────┐
+        │ Server 1 │  │ Server 2 │  │ Server 3 │
+        └──────────┘  └──────────┘  └──────────┘
+```
+
+The client does not normally need to know which backend server handles its request.
+
+It simply connects to the load balancer.
+
+The load balancer decides where the request should go.
+
+This gives us a crucial abstraction:
+
+> **Clients see one entry point while the system can contain many backend servers.**
+
+That abstraction is one of the foundations of scalable distributed systems.
+
+---
+
+# Why Do We Need a Load Balancer?
+
+Imagine you have an e-commerce application.
+
+At first, everything runs on one server:
+
+```text
+Users
+  │
+  ▼
+┌─────────────────────┐
+│ Application Server  │
+└─────────────────────┘
+```
+
+Suppose the server can comfortably handle 10,000 requests per second.
+
+Your application grows.
+
+Now you receive 25,000 requests per second.
+
+You have two choices.
+
+### Option 1: Vertical scaling
+
+Buy a more powerful machine.
+
+```text
+Small Server
+     │
+     ▼
+Bigger Server
+     │
+     ▼
+Very Big Server
+```
+
+Eventually, however, you hit hardware, cost, or practical limits.
+
+### Option 2: Horizontal scaling
+
+Run multiple application servers:
+
+```text
+          ┌──────────┐
+          │ Server 1 │
+          └──────────┘
+               │
+          ┌──────────┐
+          │ Server 2 │
+          └──────────┘
+               │
+          ┌──────────┐
+          │ Server 3 │
+          └──────────┘
+```
+
+Now the question becomes:
+
+**How do users reach the correct server?**
+
+You could technically give every server a different public address, but then the client would need to know about your internal infrastructure.
+
+That creates several problems:
+
+- What happens when a server dies?
+- What happens when you add a new server?
+- How does the client know which server is least busy?
+- How do you hide internal server addresses?
+- How do you distribute traffic evenly?
+- How do you remove unhealthy servers automatically?
+
+A load balancer solves these problems.
+
+---
+
+# The Core Job of a Load Balancer
+
+At its simplest, a load balancer performs three major tasks:
+
+1. **Receive traffic**
+2. **Choose a backend server**
+3. **Forward the traffic**
+
+For example:
+
+```text
+Client
+  │
+  │ HTTP request
+  ▼
+Load Balancer
+  │
+  │ chooses Server 2
+  ▼
+Server 2
+  │
+  │ response
+  ▼
+Load Balancer
+  │
+  ▼
+Client
+```
+
+The client does not have to care that Server 2 handled the request.
+
+From the client's perspective:
+
+```text
+Client ─────────► api.example.com
+```
+
+Internally:
+
+```text
+api.example.com
+       │
+       ▼
+Load Balancer
+       │
+       ├────► Server 1
+       ├────► Server 2
+       └────► Server 3
+```
+
+---
+
+# A Real-World Example: Food Delivery
+
+Imagine a food-delivery application with millions of users.
+
+Suppose the application has 100 backend servers.
+
+A user opens the app and requests:
+
+```text
+GET /restaurants?location=delhi
+```
+
+The request reaches the application's public endpoint.
+
+Instead of directly reaching one application server, it first reaches a load balancer.
+
+```text
+User
+ │
+ ▼
+Internet
+ │
+ ▼
+Load Balancer
+ │
+ ├────► App Server 1
+ ├────► App Server 2
+ ├────► App Server 3
+ ├────► ...
+ └────► App Server 100
+```
+
+The load balancer might decide:
+
+```text
+Request #1 → Server 17
+Request #2 → Server 42
+Request #3 → Server 8
+Request #4 → Server 17
+```
+
+The exact decision depends on the load-balancing algorithm and the architecture.
+
+This is how one public application endpoint can sit in front of a large fleet of servers.
+
+---
+
+# What Actually Happens When You Open a Website?
+
+Let's go deeper.
+
+Suppose you visit:
+
+```text
+https://example.com/products
+```
+
+A simplified flow looks like this:
+
+```text
+Browser
+   │
+   │ DNS lookup
+   ▼
+example.com
+   │
+   ▼
+Load Balancer IP
+   │
+   │ TCP/TLS connection
+   ▼
+Load Balancer
+   │
+   │ selects backend
+   ▼
+Application Server
+   │
+   │ database/cache calls
+   ▼
+Response
+   │
+   ▼
+Load Balancer
+   │
+   ▼
+Browser
+```
+
+There are several layers hidden inside this simple diagram.
+
+Let's unpack them.
+
+---
+
+# Step 1: DNS
+
+The browser first needs to determine where `example.com` should send traffic.
+
+DNS translates a domain name into an IP address.
+
+Conceptually:
+
+```text
+example.com
+     │
+     ▼
+DNS
+     │
+     ▼
+Load Balancer IP
+```
+
+The important idea is that the client usually does **not** receive the private IP addresses of your application servers.
+
+Instead, it receives an address associated with the public entry point.
+
+---
+
+# Step 2: The Client Connects to the Load Balancer
+
+The browser establishes a network connection to the load balancer.
+
+Depending on the architecture, the load balancer may operate at different network layers.
+
+This gives us an important distinction.
+
+---
+
+# Layer 4 vs Layer 7 Load Balancing
+
+Load balancers are commonly discussed as **Layer 4** or **Layer 7** load balancers.
+
+The names come from the OSI model.
+
+## Layer 4 Load Balancing
+
+Layer 4 operates primarily using transport-level information such as:
+
+- Source IP
+- Destination IP
+- Source port
+- Destination port
+- TCP/UDP connection information
+
+It does not need to understand the full HTTP request.
+
+Conceptually:
+
+```text
+Client
+  │
+  │ TCP
+  ▼
+L4 Load Balancer
+  │
+  ├────► Server 1
+  ├────► Server 2
+  └────► Server 3
+```
+
+It can make decisions based on connection and network information.
+
+### Advantages
+
+Layer 4 load balancing can be:
+
+- Fast
+- Efficient
+- Lower overhead
+- Useful for TCP/UDP traffic
+- Useful when the load balancer does not need to inspect application-level data
+
+---
+
+# Layer 7 Load Balancing
+
+Layer 7 operates at the application layer.
+
+For web applications, that commonly means HTTP/HTTPS.
+
+Now the load balancer can understand information such as:
+
+```text
+HTTP method
+Host
+Path
+Headers
+Cookies
+```
+
+For example:
+
+```text
+GET /api/users
+```
+
+could be routed differently from:
+
+```text
+GET /images/logo.png
+```
+
+You can create rules such as:
+
+```text
+/api/*       → API servers
+
+/images/*    → Image servers
+
+/payments/*  → Payment service
+```
+
+Or:
+
+```text
+api.example.com     → API cluster
+www.example.com     → Web cluster
+admin.example.com   → Admin cluster
+```
+
+This is one of the biggest advantages of application-aware load balancing.
+
+---
+
+# How Does the Load Balancer Choose a Server?
+
+This is the heart of load balancing.
+
+Suppose we have:
+
+```text
+              Load Balancer
+                    │
+        ┌───────────┼───────────┐
+        ▼           ▼           ▼
+     Server 1    Server 2    Server 3
+```
+
+A request arrives.
+
+Which server should receive it?
+
+There are several strategies.
+
+---
+
+# 1. Round Robin
+
+The simplest strategy is **round robin**.
+
+The load balancer rotates through servers.
+
+```text
+Request 1 → Server 1
+Request 2 → Server 2
+Request 3 → Server 3
+Request 4 → Server 1
+Request 5 → Server 2
+Request 6 → Server 3
+```
+
+Conceptually:
+
+```text
+1 → 2 → 3 → 1 → 2 → 3
+```
+
+### Why is it useful?
+
+It is simple and works reasonably well when servers have similar capacity and requests have similar cost.
+
+But there is an important weakness.
+
+Not every request takes the same amount of time.
+
+Consider:
+
+```text
+Request A → 10 ms
+Request B → 10 ms
+Request C → 5 seconds
+```
+
+If Server 1 receives several expensive requests while Server 2 receives lightweight requests, simply counting requests does not tell us how busy the servers actually are.
+
+That leads us to another strategy.
+
+---
+
+# 2. Weighted Round Robin
+
+Suppose your servers have different capacities.
+
+```text
+Server 1 → 2 CPU cores
+Server 2 → 4 CPU cores
+Server 3 → 8 CPU cores
+```
+
+Treating them equally would not be ideal.
+
+We can assign weights:
+
+```text
+Server 1 → weight 1
+Server 2 → weight 2
+Server 3 → weight 4
+```
+
+The load balancer then sends proportionally more traffic to the stronger server.
+
+Conceptually:
+
+```text
+Server 1 → 1 share
+Server 2 → 2 shares
+Server 3 → 4 shares
+```
+
+This is useful in mixed-capacity environments.
+
+---
+
+# 3. Least Connections
+
+Instead of asking:
+
+> "Which server is next?"
+
+the load balancer asks:
+
+> "Which server currently has the fewest active connections?"
+
+Example:
+
+```text
+Server 1 → 80 connections
+Server 2 → 25 connections
+Server 3 → 42 connections
+```
+
+The next connection might go to Server 2.
+
+```text
+             Load Balancer
+                   │
+                   ▼
+              Server 2
+          (25 connections)
+```
+
+This can work better than round robin when connections have significantly different lifetimes.
+
+But even least connections has limitations.
+
+A connection is not necessarily equivalent to CPU work.
+
+A server with 20 expensive requests might be much busier than a server with 100 lightweight requests.
+
+---
+
+# 4. Weighted Least Connections
+
+We can combine the two ideas.
+
+The load balancer considers:
+
+- Current connections
+- Server capacity
+
+A stronger server can therefore handle more connections before it is considered "busy."
+
+This is useful when backend machines are not identical.
+
+---
+
+# 5. IP Hash
+
+Another strategy is based on the client's IP address.
+
+Conceptually:
+
+```text
+hash(client_ip) % number_of_servers
+```
+
+The result determines the backend.
+
+For example:
+
+```text
+User A → Server 2
+User B → Server 1
+User C → Server 3
+```
+
+The same client IP can tend to map to the same backend.
+
+This can provide a primitive form of session affinity.
+
+However, it has drawbacks.
+
+If the number of servers changes:
+
+```text
+3 servers → 4 servers
+```
+
+the mapping can change significantly.
+
+This is one reason **consistent hashing** can be valuable in systems where stable distribution matters.
+
+---
+
+# 6. Consistent Hashing
+
+Consistent hashing is especially useful when we want to minimize remapping when servers are added or removed.
+
+Imagine servers placed around a hash ring:
+
+```text
+                 Server A
+                    ●
+              ┌───────────┐
+              │           │
+      Server D ●           ● Server B
+              │           │
+              └───────────┘
+                    ●
+                 Server C
+```
+
+A request is hashed onto the ring and assigned to the next appropriate server.
+
+If Server B disappears, we do not necessarily have to remap every request.
+
+Only a portion of the keyspace moves.
+
+This idea appears in many distributed systems, especially when partitioning data or maintaining affinity.
+
+---
+
+# Health Checks: The Feature That Makes Load Balancing Powerful
+
+Imagine you have three servers:
+
+```text
+Server 1 → healthy
+Server 2 → healthy
+Server 3 → crashed
+```
+
+Without health checking, the load balancer might continue sending traffic to Server 3.
+
+That would create failures:
+
+```text
+Request
+   │
+   ▼
+Load Balancer
+   │
+   ▼
+Server 3
+   │
+   X
+  FAIL
+```
+
+A production load balancer therefore needs to know:
+
+> **Which backend servers are actually capable of handling requests?**
+
+This is the job of health checks.
+
+---
+
+# How Health Checks Work
+
+The load balancer periodically sends a probe.
+
+For example:
+
+```text
+GET /health
+```
+
+The application might respond:
+
+```text
+HTTP/1.1 200 OK
+```
+
+The load balancer interprets that as:
+
+```text
+Server = healthy
+```
+
+If it receives repeated failures:
+
+```text
+Timeout
+Timeout
+Connection refused
+```
+
+it can mark the server unhealthy.
+
+Then:
+
+```text
+Healthy servers:
+Server 1
+Server 2
+
+Unhealthy:
+Server 3
+```
+
+Traffic is now routed only to healthy servers.
+
+```text
+                 Load Balancer
+                  /         \
+                 ▼           ▼
+            Server 1      Server 2
+             healthy       healthy
+
+            Server 3
+             failed
+              X
+```
+
+This is one of the mechanisms that allows a system to survive individual server failures.
+
+---
+
+# Why One Failed Server Does Not Have to Mean an Outage
+
+Suppose you have:
+
+```text
+                 Load Balancer
+               /       |       \
+              ▼        ▼        ▼
+           Server 1 Server 2 Server 3
+```
+
+Server 2 crashes.
+
+The load balancer detects the failure.
+
+Traffic becomes:
+
+```text
+                 Load Balancer
+                   /       \
+                  ▼         ▼
+             Server 1    Server 3
+
+              Server 2
+                 X
+```
+
+Users can continue using the application.
+
+This is the connection between **load balancing and high availability**.
+
+A load balancer does not magically make an application highly available.
+
+Rather:
+
+> **It helps route traffic away from failed instances when redundant healthy instances exist.**
+
+That distinction matters.
+
+---
+
+# Active vs Passive Health Checks
+
+There are multiple ways to determine health.
+
+## Active health checks
+
+The load balancer actively probes the server.
+
+```text
+Load Balancer
+      │
+      │ GET /health
+      ▼
+Server
+      │
+      │ 200 OK
+      ▼
+Load Balancer
+```
+
+This is explicit and common.
+
+## Passive health detection
+
+The load balancer can also observe actual traffic.
+
+If requests repeatedly fail, time out, or produce connection errors, the load balancer may treat the backend as unhealthy depending on its configuration.
+
+In practice, systems can use both active probing and observations from real traffic.
+
+---
+
+# What Should `/health` Actually Check?
+
+A common mistake is making a health endpoint too complicated.
+
+Imagine:
+
+```text
+GET /health
+```
+
+checks:
+
+```text
+Application
+Database
+Redis
+Kafka
+Third-party API
+Payment gateway
+```
+
+Now the database has a temporary problem.
+
+The health endpoint fails.
+
+The load balancer removes every application server.
+
+You may have turned a database problem into a full application outage.
+
+A better architecture often separates concepts such as:
+
+```text
+/liveness
+/readiness
+```
+
+### Liveness
+
+Asks:
+
+> "Is this process alive enough to keep running?"
+
+### Readiness
+
+Asks:
+
+> "Is this instance ready to receive production traffic?"
+
+This distinction becomes especially important in containerized systems and orchestration platforms.
+
+---
+
+# Load Balancing and Stateless Servers
+
+Load balancing becomes much easier when application servers are **stateless**.
+
+Suppose a user sends:
+
+```text
+Request 1 → Server 1
+Request 2 → Server 3
+Request 3 → Server 2
+```
+
+If every server can independently process the request, this is fine.
+
+```text
+                 Load Balancer
+              /       |       \
+             ▼        ▼        ▼
+          Server 1 Server 2 Server 3
+```
+
+But what if the user's session is stored only in Server 1's memory?
+
+Then:
+
+```text
+Login → Server 1
+Next request → Server 2
+```
+
+Server 2 might have no idea who the user is.
+
+This creates the **session affinity** problem.
+
+---
+
+# Sticky Sessions
+
+One solution is **sticky sessions**.
+
+The load balancer tries to keep a particular client attached to the same backend server.
+
+For example:
+
+```text
+User A → Server 1
+
+User A request 1 → Server 1
+User A request 2 → Server 1
+User A request 3 → Server 1
+```
+
+This can be implemented using mechanisms such as cookies or other affinity techniques.
+
+It is convenient, but it introduces trade-offs.
+
+If Server 1 becomes unhealthy:
+
+```text
+User A
+  │
+  ▼
+Server 1
+  X
+```
+
+the user's session may need to be recreated or recovered elsewhere.
+
+It can also make traffic distribution less flexible.
+
+---
+
+# A Better Approach: Externalize Session State
+
+Instead of storing important session state only inside one application server:
+
+```text
+Server 1
+  └── Session A
+```
+
+we can store it in shared infrastructure:
+
+```text
+              ┌──────────────┐
+              │ Session Store│
+              └───────┬──────┘
+                      │
+          ┌───────────┼───────────┐
+          ▼           ▼           ▼
+       Server 1    Server 2    Server 3
+```
+
+Now any server can retrieve the session.
+
+This makes horizontal scaling much easier.
+
+For example:
+
+```text
+Request 1 → Server 1
+               │
+               ▼
+          Session Store
+
+Request 2 → Server 3
+               │
+               ▼
+          Session Store
+```
+
+The application is no longer dependent on one particular machine.
+
+This is one reason distributed systems often try to minimize server-local state.
+
+---
+
+# TLS Termination
+
+Load balancers can also handle HTTPS encryption.
+
+Normally a client connects using:
+
+```text
+HTTPS
+```
+
+The encrypted connection can terminate at the load balancer.
+
+```text
+Client
+  │
+  │ HTTPS
+  ▼
+Load Balancer
+  │
+  │ HTTP or HTTPS
+  ▼
+Backend Server
+```
+
+This is called **TLS termination**.
+
+The load balancer decrypts the request and forwards it internally.
+
+Why do this?
+
+Because handling TLS at the edge can simplify certificate management and reduce repeated work on every application server.
+
+However, some environments encrypt traffic again between the load balancer and backend servers:
+
+```text
+Client
+  │
+  │ HTTPS
+  ▼
+Load Balancer
+  │
+  │ HTTPS
+  ▼
+Server
+```
+
+This is often called **TLS re-encryption** or end-to-end encryption within the application's infrastructure.
+
+The correct choice depends on the security requirements and network architecture.
+
+---
+
+# Reverse Proxy vs Load Balancer
+
+These concepts are closely related but not identical.
+
+A **reverse proxy** sits in front of servers and forwards client requests to backend services.
+
+A **load balancer** specifically focuses on distributing traffic across multiple backend instances.
+
+One component can perform both roles.
+
+For example:
+
+```text
+Client
+  │
+  ▼
+Reverse Proxy / Load Balancer
+  │
+  ├────► Server 1
+  ├────► Server 2
+  └────► Server 3
+```
+
+This is why technologies such as NGINX are often described in both reverse-proxy and load-balancing contexts.
+
+The distinction is about the role being performed, not necessarily about completely different pieces of software.
+
+---
+
+# What Information Can a Layer 7 Load Balancer Use?
+
+An application-aware load balancer can make decisions using information such as:
+
+```text
+Host
+Path
+HTTP method
+Headers
+Cookies
+Query parameters
+TLS information
+```
+
+For example:
+
+```text
+api.example.com
+       │
+       ▼
+API cluster
+```
+
+while:
+
+```text
+www.example.com
+       │
+       ▼
+Web cluster
+```
+
+And:
+
+```text
+example.com/images/*
+       │
+       ▼
+Image service
+```
+
+This allows a single public entry point to route traffic to different parts of a system.
+
+---
+
+# Path-Based Routing
+
+Suppose your application contains:
+
+```text
+/api
+/images
+/admin
+```
+
+The load balancer can route them differently:
+
+```text
+                 Load Balancer
+                      │
+        ┌─────────────┼─────────────┐
+        ▼             ▼             ▼
+      /api          /images        /admin
+        │             │             │
+        ▼             ▼             ▼
+   API servers   Image servers   Admin servers
+```
+
+This is called **path-based routing**.
+
+It is extremely useful in microservice architectures.
+
+---
+
+# Host-Based Routing
+
+You can also route based on the hostname.
+
+```text
+api.example.com
+     │
+     ▼
+API cluster
+
+admin.example.com
+     │
+     ▼
+Admin cluster
+
+www.example.com
+     │
+     ▼
+Web cluster
+```
+
+This is **host-based routing**.
+
+---
+
+# Load Balancing During Deployment
+
+Load balancers are also extremely useful when deploying new versions.
+
+Suppose you currently have:
+
+```text
+Version 1
+Server 1
+Server 2
+Server 3
+```
+
+You deploy Version 2 to new servers:
+
+```text
+Version 1
+Server 1
+Server 2
+Server 3
+
+Version 2
+Server 4
+Server 5
+```
+
+The load balancer can gradually direct traffic toward the new version.
+
+This enables deployment strategies such as:
+
+- Rolling deployments
+- Blue-green deployments
+- Canary deployments
+
+---
+
+# Canary Deployment
+
+Suppose 100% of traffic currently goes to Version 1.
+
+We can start with:
+
+```text
+Version 1 → 95%
+Version 2 → 5%
+```
+
+If Version 2 behaves correctly:
+
+```text
+Version 1 → 80%
+Version 2 → 20%
+```
+
+Then:
+
+```text
+Version 1 → 50%
+Version 2 → 50%
+```
+
+Eventually:
+
+```text
+Version 1 → 0%
+Version 2 → 100%
+```
+
+The load balancer or traffic-routing layer becomes an important part of this process.
+
+The benefit is that a bad deployment can be detected before it affects every user.
+
+---
+
+# Blue-Green Deployment
+
+Another approach is to maintain two complete environments:
+
+```text
+Blue
+Version 1
+
+Green
+Version 2
+```
+
+Initially:
+
+```text
+Users
+  │
+  ▼
+Load Balancer
+  │
+  ▼
+Blue
+```
+
+After validating Green:
+
+```text
+Users
+  │
+  ▼
+Load Balancer
+  │
+  ▼
+Green
+```
+
+If something goes wrong, traffic can potentially be switched back.
+
+This is one reason traffic routing is much more than simple request distribution.
+
+---
+
+# What Happens When a Server Is Added?
+
+Suppose we have:
+
+```text
+Server 1
+Server 2
+Server 3
+```
+
+Traffic is distributed among them.
+
+The application becomes more popular.
+
+We add:
+
+```text
+Server 4
+```
+
+A properly managed load-balancing system can discover or be configured with the new instance.
+
+The traffic pool becomes:
+
+```text
+Server 1
+Server 2
+Server 3
+Server 4
+```
+
+Now the system can distribute new traffic across a larger fleet.
+
+This is the operational foundation of horizontal scaling.
+
+---
+
+# The Load Balancer Can Also Become a Bottleneck
+
+Here is an important system-design lesson.
+
+We started with:
+
+```text
+              Load Balancer
+             /      |      \
+            ▼       ▼       ▼
+         Server   Server   Server
+```
+
+But what if we have millions of requests per second?
+
+Now the question becomes:
+
+> What if the load balancer itself fails?
+
+Or:
+
+> What if one load balancer cannot handle the traffic?
+
+The load balancer is now part of the critical path.
+
+That means we must design the load-balancing layer for high availability and sufficient capacity.
+
+---
+
+# High Availability for Load Balancers
+
+Instead of one load balancer:
+
+```text
+Users
+  │
+  ▼
+Load Balancer
+  │
+  ├── Server 1
+  ├── Server 2
+  └── Server 3
+```
+
+we can have redundant load-balancing infrastructure.
+
+Conceptually:
+
+```text
+                 Users
+                   │
+            ┌──────┴──────┐
+            ▼             ▼
+       Load Balancer A  Load Balancer B
+            │             │
+            └──────┬──────┘
+                   │
+          ┌────────┼────────┐
+          ▼        ▼        ▼
+       Server 1 Server 2 Server 3
+```
+
+The exact implementation depends on the infrastructure provider and network design.
+
+The key idea is:
+
+> **Do not create a single point of failure while trying to remove other single points of failure.**
+
+---
+
+# Load Balancer vs DNS Load Balancing
+
+DNS can also distribute traffic.
+
+For example:
+
+```text
+example.com
+    │
+    ├──► IP 1
+    ├──► IP 2
+    └──► IP 3
+```
+
+This is different from a traditional load balancer.
+
+DNS-based distribution happens at the name-resolution level.
+
+A traditional load balancer receives the actual connection/request and can make a decision at request time.
+
+DNS also has caching behavior.
+
+A client may continue using a previously resolved IP until the DNS record expires or is refreshed.
+
+Therefore, DNS load balancing and application/network load balancing solve related but different problems.
+
+Large systems can use both.
+
+---
+
+# Load Balancer and Database Scaling
+
+A common misunderstanding is:
+
+> "If I add a load balancer, my whole system scales."
+
+Not necessarily.
+
+The load balancer distributes application traffic.
+
+But your database can still become the bottleneck.
+
+For example:
+
+```text
+                 Load Balancer
+                 /     |     \
+                ▼      ▼      ▼
+             App 1   App 2   App 3
+                \      |      /
+                 \     |     /
+                  ▼    ▼    ▼
+                  Database
+```
+
+You may scale:
+
+```text
+App servers: 3 → 30
+```
+
+but still have:
+
+```text
+Database: 1
+```
+
+If every application server sends more traffic to the same database, the database can become saturated.
+
+This is why system design requires us to identify the bottleneck at every layer.
+
+---
+
+# A Complete Scalable Architecture
+
+A more realistic web architecture might look like this:
+
+```text
+                         Users
+                           │
+                           ▼
+                          DNS
+                           │
+                           ▼
+                 ┌───────────────────┐
+                 │ Load Balancer /   │
+                 │ Reverse Proxy     │
+                 └─────────┬─────────┘
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+         App Server 1  App Server 2  App Server 3
+             │             │             │
+             └─────────────┼─────────────┘
+                           │
+                    ┌──────┴──────┐
+                    ▼             ▼
+                  Cache        Database
+```
+
+At larger scale, we might add:
+
+```text
+                         Users
+                           │
+                           ▼
+                          DNS
+                           │
+                           ▼
+                     Load Balancer
+                           │
+          ┌────────────────┼────────────────┐
+          ▼                ▼                ▼
+       Web/API           Web/API          Web/API
+        cluster           cluster          cluster
+          │                │                │
+          └────────────────┼────────────────┘
+                           │
+             ┌─────────────┼─────────────┐
+             ▼             ▼             ▼
+           Cache        Message Queue   Database
+```
+
+Now the system has multiple layers of scalability.
+
+---
+
+# Load Balancing Is Not Only About "Equal Traffic"
+
+This is perhaps the most important mental model.
+
+A beginner often thinks:
+
+> Load balancer = split requests equally.
+
+That's only the simplest case.
+
+A production load-balancing system may answer questions like:
+
+- Is this backend healthy?
+- Which server has available capacity?
+- Which server should receive this connection?
+- Should this request go to the API cluster or image cluster?
+- Does this user need session affinity?
+- Should this request go to Version 1 or Version 2?
+- Should traffic from this domain go to a particular service?
+- Should TLS terminate here?
+- Should the request be rejected because the backend is overloaded?
+- Should a failed instance be removed from rotation?
+
+So the load balancer is better understood as a **traffic-management layer**.
+
+---
+
+# A Simple Analogy: Airport
+
+Imagine an airport.
+
+Thousands of passengers arrive.
+
+There are multiple security counters.
+
+If everyone chooses a random counter, some counters may become overloaded while others remain empty.
+
+Instead, a coordinator directs passengers:
+
+```text
+Passengers
+    │
+    ▼
+Coordinator
+    │
+    ├──► Counter 1
+    ├──► Counter 2
+    ├──► Counter 3
+    └──► Counter 4
+```
+
+If Counter 3 closes:
+
+```text
+Counter 3 → CLOSED
+```
+
+the coordinator stops sending people there.
+
+That is roughly what a load balancer does for server traffic.
+
+The servers are the counters.
+
+The incoming requests are the passengers.
+
+The load balancer is the traffic coordinator.
+
+But unlike our airport analogy, real load balancers make decisions using network and application-level information and can operate at enormous scale.
+
+---
+
+# What Happens During a Server Failure?
+
+Let's walk through the complete sequence.
+
+Initially:
+
+```text
+Server 1 → healthy
+Server 2 → healthy
+Server 3 → healthy
+```
+
+Traffic:
+
+```text
+             Load Balancer
+            /      |      \
+           ▼       ▼       ▼
+        Server 1 Server 2 Server 3
+```
+
+Now Server 2 crashes.
+
+```text
+Server 2 → DOWN
+```
+
+The health-check mechanism detects the failure.
+
+The load balancer changes its backend pool:
+
+```text
+Before:
+
+[Server 1, Server 2, Server 3]
+
+After:
+
+[Server 1, Server 3]
+```
+
+New requests go to:
+
+```text
+Server 1 or Server 3
+```
+
+When Server 2 recovers and passes its readiness checks:
+
+```text
+[Server 1, Server 2, Server 3]
+```
+
+it can be added back into rotation.
+
+This is a fundamental pattern in resilient systems:
+
+> **Instances can come and go without changing the public interface used by clients.**
+
+---
+
+# What Happens During Traffic Spikes?
+
+Imagine an application normally receives:
+
+```text
+10,000 requests/second
+```
+
+A major event happens.
+
+Traffic jumps to:
+
+```text
+100,000 requests/second
+```
+
+A static fleet might struggle.
+
+An autoscaling system can launch additional application instances:
+
+```text
+Before:
+
+Server 1
+Server 2
+Server 3
+
+After:
+
+Server 1
+Server 2
+Server 3
+Server 4
+Server 5
+Server 6
+Server 7
+Server 8
+```
+
+The load balancer puts healthy new instances into service.
+
+The architecture becomes:
+
+```text
+Traffic
+   │
+   ▼
+Load Balancer
+   │
+   ├──► 1
+   ├──► 2
+   ├──► 3
+   ├──► 4
+   ├──► 5
+   ├──► 6
+   ├──► 7
+   └──► 8
+```
+
+When traffic drops, instances can be removed.
+
+The load balancer stops sending traffic to instances that are being drained or terminated.
+
+This creates a powerful combination:
+
+```text
+Load Balancing
+      +
+Autoscaling
+      =
+Elastic Application Capacity
+```
+
+---
+
+# Connection Draining
+
+There is an important detail here.
+
+Suppose Server 2 needs to be removed.
+
+It currently has active requests.
+
+If we immediately kill it:
+
+```text
+Active request
+      │
+      ▼
+Server 2
+      X
+```
+
+the request may fail.
+
+Instead, many systems use **connection draining** or **graceful draining**.
+
+The load balancer stops sending **new** traffic to Server 2 but allows existing connections to finish.
+
+```text
+New requests
+     X
+     │
+Server 2
+
+Existing requests
+     │
+     ▼
+Allowed to finish
+```
+
+After the existing work completes, the server can safely shut down.
+
+This is especially important during:
+
+- Deployments
+- Autoscaling
+- Maintenance
+- Instance replacement
+
+---
+
+# Load Balancing and Microservices
+
+In a monolith:
+
+```text
+Load Balancer
+     │
+     ├── App 1
+     ├── App 2
+     └── App 3
+```
+
+In a microservices architecture, routing can become more granular.
+
+```text
+                    Load Balancer
+                         │
+       ┌─────────────────┼─────────────────┐
+       ▼                 ▼                 ▼
+    User Service     Order Service    Payment Service
+       │                 │                 │
+   Instances          Instances          Instances
+```
+
+Different services may have different traffic patterns.
+
+For example:
+
+```text
+User Service:
+500 requests/sec
+
+Order Service:
+5,000 requests/sec
+
+Payment Service:
+300 requests/sec
+```
+
+Each service can scale independently.
+
+Load balancing therefore becomes part of service-level traffic management.
+
+---
+
+# Load Balancer vs API Gateway
+
+Another common confusion:
+
+**Load balancer and API gateway are not exactly the same thing.**
+
+A load balancer primarily focuses on distributing traffic and maintaining healthy backend connectivity.
+
+An API gateway typically provides higher-level API capabilities such as:
+
+- Authentication
+- Authorization
+- Rate limiting
+- Request transformation
+- API routing
+- Observability
+- Version management
+
+There can be overlap.
+
+A single infrastructure component can sometimes perform several of these roles.
+
+But conceptually:
+
+```text
+Load Balancer
+→ "Which healthy backend should handle this traffic?"
+
+API Gateway
+→ "Is this API request allowed, how should it be transformed, and where should it go?"
+```
+
+---
+
+# Rate Limiting and Load Balancing
+
+A load balancer can sometimes participate in traffic protection.
+
+Suppose one client sends:
+
+```text
+100,000 requests/second
+```
+
+You do not necessarily want all of those requests reaching your application servers.
+
+A traffic-management layer can enforce policies such as:
+
+```text
+Client A
+↓
+100 requests/sec allowed
+```
+
+Additional requests may be rejected or delayed.
+
+Rate limiting is not the fundamental purpose of a load balancer, but modern edge and gateway systems often combine these capabilities.
+
+---
+
+# Load Balancing Algorithms: Quick Comparison
+
+| Algorithm | Main idea | Best suited for |
+|---|---|---|
+| Round Robin | Rotate servers | Similar servers and similar requests |
+| Weighted Round Robin | Rotate according to capacity | Different server capacities |
+| Least Connections | Choose fewest active connections | Variable connection lifetimes |
+| Weighted Least Connections | Combine capacity and connections | Mixed server capacity |
+| IP Hash | Map clients using IP hash | Basic affinity |
+| Consistent Hashing | Minimize remapping | Stable partitioning/affinity |
+
+The right algorithm depends on the workload.
+
+There is no universally best load-balancing algorithm.
+
+---
+
+# The Most Important Trade-Off
+
+A load balancer gives us abstraction and resilience.
+
+But it also introduces another distributed component.
+
+Now you have to think about:
+
+```text
+Availability
+Capacity
+Latency
+Health checks
+Routing
+Connection management
+TLS
+Observability
+Failure modes
+```
+
+And the load balancer itself must be highly available.
+
+This is a recurring theme in system design:
+
+> **Every abstraction solves a problem while potentially introducing another one.**
+
+---
+
+# Load Balancer in a System Design Interview
+
+If an interviewer asks:
+
+> "How would you scale this application?"
+
+A strong answer should not stop at:
+
+> "I'll add a load balancer."
+
+Explain what role it plays.
+
+For example:
+
+> "I would put a highly available load-balancing layer in front of multiple stateless application instances. The load balancer would distribute incoming traffic using an appropriate strategy, continuously health-check backend instances, remove unhealthy instances from rotation, and support graceful connection draining during deployments or scaling events. If routing needs to depend on HTTP paths or hosts, I would use Layer 7 routing. Application state such as sessions would be externalized so requests can be handled by any healthy instance."
+
+That answer demonstrates that you understand the architecture rather than simply knowing the term.
+
+---
+
+# A Practical Mental Model
+
+Whenever you see:
+
+```text
+                    Users
+                      │
+                      ▼
+               ┌─────────────┐
+               │Load Balancer│
+               └──────┬──────┘
+                      │
+           ┌──────────┼──────────┐
+           ▼          ▼          ▼
+        Server 1   Server 2   Server 3
+```
+
+ask five questions:
+
+### 1. How are requests distributed?
+
+```text
+Round robin?
+Least connections?
+Hashing?
+Weighted routing?
+```
+
+### 2. How do we know a server is healthy?
+
+```text
+Health checks?
+Readiness checks?
+Timeouts?
+```
+
+### 3. What happens when a server dies?
+
+```text
+Remove it from rotation.
+Route traffic to healthy instances.
+```
+
+### 4. What happens when a server is added?
+
+```text
+Register it.
+Verify readiness.
+Start sending traffic.
+```
+
+### 5. What happens to state?
+
+```text
+Stateless application?
+External session store?
+Sticky sessions?
+```
+
+If you can answer those five questions, you already understand a large portion of practical load balancing.
+
+---
+
+# Load Balancer in One Diagram
+
+Here is the architecture worth remembering:
+
+```text
+                              USERS
+                                │
+                                ▼
+                               DNS
+                                │
+                                ▼
+                    ┌──────────────────────┐
+                    │  Load Balancer /     │
+                    │  Reverse Proxy       │
+                    └──────────┬───────────┘
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+              ▼                ▼                ▼
+        ┌──────────┐     ┌──────────┐     ┌──────────┐
+        │ App 1    │     │ App 2    │     │ App 3    │
+        │ Healthy  │     │ Healthy  │     │ Healthy  │
+        └────┬─────┘     └────┬─────┘     └────┬─────┘
+             │                │                │
+             └────────────────┼────────────────┘
+                              │
+                 ┌────────────┼────────────┐
+                 ▼            ▼            ▼
+               Cache      Message Queue  Database
+```
+
+The load balancer is the traffic-control point between the outside world and your scalable application fleet.
+
+---
+
+# Final Takeaway
+
+A load balancer is not simply a machine that distributes requests equally.
+
+It is a **traffic-management layer** that sits between clients and backend infrastructure.
+
+Its core responsibilities can include:
+
+- Distributing incoming traffic
+- Detecting unhealthy instances
+- Routing requests
+- Supporting horizontal scaling
+- Maintaining availability during instance failures
+- Managing connections
+- Supporting TLS termination
+- Enabling path and host-based routing
+- Supporting deployment strategies
+- Helping applications scale elastically
+
+And the most important connection to remember from our previous article is this:
+
+```text
+Horizontal Scaling
+        │
+        ▼
+Multiple Application Servers
+        │
+        ▼
+      Load Balancer
+        │
+        ▼
+Traffic distributed across the fleet
+```
+
+**Horizontal scaling gives you more servers.**
+
+**The load balancer makes those servers usable as one scalable backend.**
+
+That is why load balancing is one of the first concepts you should understand after learning horizontal and vertical scaling.
+
+---
+
+## Frequently Asked Questions
+
+### What is a load balancer in system design?
+
+A load balancer is a component that receives incoming traffic and distributes it across multiple backend servers. It can also perform health checks, routing, TLS termination, and traffic management.
+
+### How does a load balancer work?
+
+A client sends traffic to the load balancer. The load balancer selects a healthy backend according to a routing or load-balancing algorithm, forwards the request, receives the response, and returns it to the client.
+
+### Why is a load balancer needed for horizontal scaling?
+
+Horizontal scaling creates multiple application instances. A load balancer provides a single entry point and distributes incoming traffic across those instances.
+
+### What is Layer 4 load balancing?
+
+Layer 4 load balancing makes routing decisions using transport/network information such as TCP connections, IP addresses, and ports rather than understanding the full HTTP request.
+
+### What is Layer 7 load balancing?
+
+Layer 7 load balancing understands application-level information such as HTTP paths, hosts, headers, and cookies. This enables more intelligent routing.
+
+### What happens if a server behind a load balancer fails?
+
+The load balancer can detect the failure through health checks and remove the unhealthy instance from the traffic pool. New requests are then routed to healthy instances.
+
+### What is a sticky session?
+
+Sticky session, or session affinity, attempts to route a user's requests to the same backend server. It can be useful when application state is stored locally, although externalizing state is often more scalable.
+
+### Is a load balancer a reverse proxy?
+
+A load balancer can also act as a reverse proxy, but the concepts are not identical. A reverse proxy forwards client requests to backend services, while a load balancer specifically focuses on distributing traffic across multiple backends.
+
+### Does a load balancer make a system highly available?
+
+Not by itself. High availability requires redundant healthy backend instances and infrastructure designed to survive failures. A load balancer helps by detecting unhealthy instances and routing traffic around them.
+
+### Can a load balancer become a bottleneck?
+
+Yes. The load-balancing layer itself must have enough capacity and should be deployed redundantly so it does not become a single point of failure.
+
+---
+
+## What's Next?
+
+We now have two important pieces of the system-design puzzle:
+
+```text
+Horizontal Scaling
+        │
+        ▼
+Multiple Servers
+        │
+        ▼
+Load Balancer
+        │
+        ▼
+Traffic Distribution
+```
+
+The next question is obvious:
+
+> **What happens when all those servers need to access the same data?**
+
+That takes us to one of the most important topics in system design:
+
+**Caching.**
+
+And once we understand caching, we can start connecting these individual components into complete production architectures.
