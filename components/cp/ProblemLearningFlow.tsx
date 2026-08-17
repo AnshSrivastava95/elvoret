@@ -123,7 +123,7 @@ export default function ProblemLearningFlow({
       {!showAnswer && (
         <HintSection
           hints={hints}
-          onRevealAnswer={() =>
+          onAllHintsRevealed={() =>
             setShowAnswer(true)
           }
         />
