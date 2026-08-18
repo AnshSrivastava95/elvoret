@@ -58,11 +58,9 @@ app.post(
     res: Response
   ) => {
 
-    /*
-     * -----------------------------------------------
-     * AUTHENTICATION
-     * -----------------------------------------------
-     */
+    /* =====================================================
+       AUTH
+       ===================================================== */
 
     const authorization =
       req.headers.authorization;
@@ -75,15 +73,15 @@ app.post(
 
       return res.status(401).json({
         ok: false,
-        error: "Unauthorized",
+
+        error:
+          "Unauthorized",
       });
     }
 
-    /*
-     * -----------------------------------------------
-     * LANGUAGE
-     * -----------------------------------------------
-     */
+    /* =====================================================
+       LANGUAGE
+       ===================================================== */
 
     if (
       req.body?.language !==
@@ -98,11 +96,9 @@ app.post(
       });
     }
 
-    /*
-     * -----------------------------------------------
-     * CODE
-     * -----------------------------------------------
-     */
+    /* =====================================================
+       CODE
+       ===================================================== */
 
     if (
       typeof req.body?.code !==
@@ -117,11 +113,9 @@ app.post(
       });
     }
 
-    /*
-     * -----------------------------------------------
-     * EXECUTION
-     * -----------------------------------------------
-     */
+    /* =====================================================
+       EXECUTE
+       ===================================================== */
 
     try {
 
@@ -139,6 +133,18 @@ app.post(
               ? req.body.input
               : "",
 
+          /*
+           * IMPORTANT:
+           *
+           * Forward expectedOutput exactly as
+           * received from Vercel.
+           */
+          expectedOutput:
+            typeof req.body.expectedOutput ===
+            "string"
+              ? req.body.expectedOutput
+              : undefined,
+
           timeLimitMs:
             req.body.timeLimitMs,
 
@@ -146,13 +152,23 @@ app.post(
             req.body.memoryLimitMb,
         });
 
-      return res.status(
-        result.ok
-          ? 200
-          : 422
-      ).json(
-        result
-      );
+      /*
+       * Successful execution:
+       * HTTP 200
+       *
+       * Wrong answer / TLE / runtime error:
+       * HTTP 422
+       *
+       * This lets the frontend distinguish
+       * infrastructure failure from a verdict.
+       */
+      return res
+        .status(
+          result.ok
+            ? 200
+            : 422
+        )
+        .json(result);
 
     } catch (error) {
 
@@ -161,9 +177,7 @@ app.post(
         error
       );
 
-      return res.status(
-        500
-      ).json({
+      return res.status(500).json({
         ok: false,
 
         status:
@@ -188,6 +202,5 @@ app.listen(
     console.log(
       `Elvoret executor listening on port ${PORT}`
     );
-
   }
 );
