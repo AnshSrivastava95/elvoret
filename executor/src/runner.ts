@@ -18,53 +18,28 @@ import type {
 const WORK_ROOT =
   "/tmp/elvoret-executor";
 
-/*
- * Maximum source-code size accepted.
- */
 const MAX_CODE_SIZE =
   100_000;
 
-/*
- * Maximum input size accepted.
- */
 const MAX_INPUT_SIZE =
   1_000_000;
 
-/*
- * Maximum combined stdout/stderr size.
- *
- * This prevents programs such as:
- *
- * while (true) cout << "x";
- *
- * from filling the executor's memory/disk.
- */
 const MAX_OUTPUT_SIZE =
   1_000_000;
 
-/*
- * Default execution time for submitted programs.
- */
 const DEFAULT_TIME_LIMIT_MS =
   2_000;
 
-/*
- * Maximum execution time that the API
- * will allow a submitted program to request.
- */
 const MAX_TIME_LIMIT_MS =
   10_000;
 
 /*
- * Small infrastructure/startup allowance.
+ * Infrastructure/startup buffer.
  *
  * Example:
  *
- * Problem limit = 2000 ms
- * Actual executor kill = 2500 ms
- *
- * This prevents small startup/scheduling overhead
- * from incorrectly becoming a TLE.
+ * Problem limit = 2000ms
+ * Executor kill = 2500ms
  */
 const EXECUTION_BUFFER_MS =
   500;
@@ -76,12 +51,6 @@ const EXECUTION_BUFFER_MS =
 interface ProcessOptions {
   cwd: string;
 
-  /*
-   * Optional.
-   *
-   * Compilation does not use a timeout.
-   * User-program execution does.
-   */
   timeoutMs?: number;
 
   stdin: string;
@@ -107,39 +76,70 @@ interface ProcessResult {
    HELPERS
    ========================================================= */
 
-/**
- * Create a unique ID for each execution.
- */
 function createJobId(): string {
   return crypto.randomUUID();
 }
 
-/**
- * Keep values inside a safe range.
- */
 function clamp(
   value: number,
   min: number,
   max: number
 ): number {
   return Math.min(
-    Math.max(
-      value,
-      min
-    ),
+    Math.max(value, min),
     max
   );
 }
 
-/**
- * Make sure the executor workspace exists.
- */
 async function ensureWorkRoot(): Promise<void> {
   await fs.mkdir(
     WORK_ROOT,
     {
       recursive: true,
     }
+  );
+}
+
+/* =========================================================
+   OUTPUT NORMALIZATION
+   ========================================================= */
+
+/**
+ * Normalize competitive-programming output.
+ *
+ * This ignores:
+ * - multiple spaces
+ * - tabs
+ * - newlines
+ * - leading/trailing whitespace
+ *
+ * Example:
+ *
+ * "1  2\n3\n"
+ *
+ * becomes:
+ *
+ * "1 2 3"
+ */
+function normalizeOutput(
+  output: string
+): string {
+  return output
+    .trim()
+    .split(/\s+/)
+    .join(" ");
+}
+
+/**
+ * Compare program output with expected output.
+ */
+function outputsMatch(
+  actual: string,
+  expected: string
+): boolean {
+  return (
+    normalizeOutput(actual) ===
+    normalizeOutput(expected)
   );
 }
 
@@ -158,13 +158,11 @@ export async function executeCpp(
      ======================================================= */
 
   if (
-    typeof request.code !==
-    "string"
+    typeof request.code !== "string"
   ) {
     return {
       ok: false,
-      status:
-        "SYSTEM_ERROR",
+      status: "SYSTEM_ERROR",
       stdout: "",
       stderr: "",
       executionTimeMs: 0,
@@ -180,8 +178,7 @@ export async function executeCpp(
   ) {
     return {
       ok: false,
-      status:
-        "SYSTEM_ERROR",
+      status: "SYSTEM_ERROR",
       stdout: "",
       stderr: "",
       executionTimeMs: 0,
@@ -196,8 +193,7 @@ export async function executeCpp(
      ======================================================= */
 
   const input =
-    typeof request.input ===
-    "string"
+    typeof request.input === "string"
       ? request.input
       : "";
 
@@ -207,8 +203,7 @@ export async function executeCpp(
   ) {
     return {
       ok: false,
-      status:
-        "SYSTEM_ERROR",
+      status: "SYSTEM_ERROR",
       stdout: "",
       stderr: "",
       executionTimeMs: 0,
@@ -232,26 +227,12 @@ export async function executeCpp(
       MAX_TIME_LIMIT_MS
     );
 
-  /*
-   * The actual timeout given to the child process
-   * includes a small infrastructure buffer.
-   *
-   * Example:
-   *
-   * 2000 ms problem limit
-   * + 500 ms buffer
-   * = 2500 ms process timeout
-   */
   const executionTimeoutMs =
     timeLimitMs +
     EXECUTION_BUFFER_MS;
 
   /*
-   * Memory limits are accepted by the API contract,
-   * but are not enforced yet.
-   *
-   * Proper memory isolation will be added when
-   * we harden the sandbox.
+   * Reserved for the memory-isolation layer.
    */
   const memoryLimitMb =
     request.memoryLimitMb;
@@ -310,14 +291,6 @@ export async function executeCpp(
        COMPILE
        ===================================================== */
 
-    /*
-     * IMPORTANT:
-     *
-     * There is deliberately NO timeoutMs here.
-     *
-     * The compile phase is separate from the
-     * problem's execution time limit.
-     */
     const compileResult =
       await runProcess(
         "g++",
@@ -333,6 +306,9 @@ export async function executeCpp(
           cwd:
             jobDirectory,
 
+          /*
+           * No compile timeout.
+           */
           stdin: "",
 
           maxOutputBytes:
@@ -341,40 +317,7 @@ export async function executeCpp(
       );
 
     /* =====================================================
-       COMPILATION TIMEOUT
-       ===================================================== */
-
-    /*
-     * This should normally never happen because
-     * compilation has no timeout.
-     *
-     * Kept for compatibility with the ProcessResult type.
-     */
-    if (
-      compileResult.timedOut
-    ) {
-      return {
-        ok: false,
-
-        status:
-          "TIME_LIMIT_EXCEEDED",
-
-        stdout:
-          compileResult.stdout,
-
-        stderr:
-          compileResult.stderr,
-
-        executionTimeMs:
-          compileResult.executionTimeMs,
-
-        exitCode:
-          null,
-      };
-    }
-
-    /* =====================================================
-       COMPILER OUTPUT TOO LARGE
+       COMPILER OUTPUT LIMIT
        ===================================================== */
 
     if (
@@ -382,7 +325,6 @@ export async function executeCpp(
     ) {
       return {
         ok: false,
-
         status:
           "OUTPUT_LIMIT_EXCEEDED",
 
@@ -405,8 +347,7 @@ export async function executeCpp(
        ===================================================== */
 
     if (
-      compileResult.exitCode !==
-      0
+      compileResult.exitCode !== 0
     ) {
       return {
         ok: false,
@@ -429,7 +370,7 @@ export async function executeCpp(
     }
 
     /* =====================================================
-       EXECUTE COMPILED PROGRAM
+       EXECUTE PROGRAM
        ===================================================== */
 
     const executionResult =
@@ -440,9 +381,6 @@ export async function executeCpp(
           cwd:
             jobDirectory,
 
-          /*
-           * Actual problem limit + startup buffer.
-           */
           timeoutMs:
             executionTimeoutMs,
 
@@ -455,7 +393,7 @@ export async function executeCpp(
       );
 
     /* =====================================================
-       TIME LIMIT EXCEEDED
+       TIME LIMIT
        ===================================================== */
 
     if (
@@ -482,7 +420,7 @@ export async function executeCpp(
     }
 
     /* =====================================================
-       OUTPUT LIMIT EXCEEDED
+       OUTPUT LIMIT
        ===================================================== */
 
     if (
@@ -513,8 +451,7 @@ export async function executeCpp(
        ===================================================== */
 
     if (
-      executionResult.exitCode !==
-      0
+      executionResult.exitCode !== 0
     ) {
       return {
         ok: false,
@@ -537,7 +474,56 @@ export async function executeCpp(
     }
 
     /* =====================================================
-       ACCEPTED EXECUTION
+       WRONG ANSWER
+       ===================================================== */
+
+    /*
+     * Only compare output when the caller supplies
+     * expectedOutput.
+     *
+     * This lets us continue using the executor for
+     * simple "Run" operations where there is no
+     * expected answer.
+     */
+    if (
+      typeof request.expectedOutput ===
+      "string"
+    ) {
+
+      const matches =
+        outputsMatch(
+          executionResult.stdout,
+          request.expectedOutput
+        );
+
+      if (!matches) {
+
+        return {
+          ok: false,
+
+          status:
+            "WRONG_ANSWER",
+
+          stdout:
+            executionResult.stdout,
+
+          stderr:
+            executionResult.stderr,
+
+          executionTimeMs:
+            executionResult.executionTimeMs,
+
+          exitCode:
+            executionResult.exitCode,
+
+          expectedOutput:
+            request.expectedOutput,
+        };
+      }
+    }
+
+    /* =====================================================
+       ACCEPTED
        ===================================================== */
 
     return {
@@ -616,22 +602,6 @@ export async function executeCpp(
    PROCESS RUNNER
    ========================================================= */
 
-/**
- * Spawn a process and capture:
- *
- * - stdout
- * - stderr
- * - exit code
- * - execution time
- * - optional timeout
- * - output limit
- *
- * NOTE:
- *
- * This is still the initial execution implementation.
- * It is NOT yet the final security sandbox for arbitrary
- * public submissions.
- */
 function runProcess(
   command: string,
   args: string[],
@@ -641,39 +611,24 @@ function runProcess(
   return new Promise(
     (resolve) => {
 
-      /* ===================================================
-         START TIME
-         =================================================== */
-
       const start =
         process.hrtime.bigint();
-
-      /* ===================================================
-         STATE
-         =================================================== */
 
       let stdout = "";
 
       let stderr = "";
 
-      let timedOut =
-        false;
+      let timedOut = false;
 
       let outputLimitExceeded =
         false;
 
-      let finished =
-        false;
+      let finished = false;
 
       /* ===================================================
          SPAWN
          =================================================== */
 
-      /*
-       * Explicit ChildProcess cast prevents the
-       * Node type-overload issue that previously
-       * turned `child` into `never`.
-       */
       const child =
         spawn(
           command,
@@ -688,10 +643,6 @@ function runProcess(
               "pipe",
             ],
 
-            /*
-             * Keep the existing environment while
-             * overriding only what we need.
-             */
             env: {
               ...process.env,
 
@@ -721,8 +672,7 @@ function runProcess(
             return;
           }
 
-          finished =
-            true;
+          finished = true;
 
           const end =
             process.hrtime.bigint();
@@ -756,11 +706,6 @@ function runProcess(
           typeof setTimeout
         > | undefined;
 
-      /*
-       * Compilation passes no timeoutMs.
-       *
-       * Student execution passes timeoutMs.
-       */
       if (
         options.timeoutMs !==
         undefined
@@ -774,8 +719,7 @@ function runProcess(
                 return;
               }
 
-              timedOut =
-                true;
+              timedOut = true;
 
               child.kill(
                 "SIGKILL"
@@ -790,9 +734,7 @@ function runProcess(
          STDIN
          =================================================== */
 
-      if (
-        child.stdin
-      ) {
+      if (child.stdin) {
 
         child.stdin.write(
           options.stdin
@@ -805,9 +747,7 @@ function runProcess(
          STDOUT
          =================================================== */
 
-      if (
-        child.stdout
-      ) {
+      if (child.stdout) {
 
         child.stdout.on(
           "data",
@@ -846,9 +786,7 @@ function runProcess(
          STDERR
          =================================================== */
 
-      if (
-        child.stderr
-      ) {
+      if (child.stderr) {
 
         child.stderr.on(
           "data",
@@ -894,18 +832,13 @@ function runProcess(
             number | null
         ) => {
 
-          if (
-            timeout
-          ) {
-
+          if (timeout) {
             clearTimeout(
               timeout
             );
           }
 
-          finish(
-            code
-          );
+          finish(code);
         }
       );
 
@@ -916,14 +849,10 @@ function runProcess(
       child.on(
         "error",
         (
-          error:
-            Error
+          error: Error
         ) => {
 
-          if (
-            timeout
-          ) {
-
+          if (timeout) {
             clearTimeout(
               timeout
             );
@@ -932,9 +861,7 @@ function runProcess(
           stderr +=
             error.message;
 
-          finish(
-            null
-          );
+          finish(null);
         }
       );
     }
