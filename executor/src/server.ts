@@ -59,7 +59,7 @@ app.post(
   ) => {
 
     /* =====================================================
-       AUTH
+       AUTHENTICATION
        ===================================================== */
 
     const authorization =
@@ -73,7 +73,9 @@ app.post(
 
       return res.status(401).json({
         ok: false,
-        error: "Unauthorized",
+
+        error:
+          "Unauthorized",
       });
     }
 
@@ -112,12 +114,12 @@ app.post(
     }
 
     /* =====================================================
-       TEST ARRAY VALIDATION
+       TESTS VALIDATION
        ===================================================== */
 
     if (
       req.body?.tests !==
-      undefined &&
+        undefined &&
       !Array.isArray(
         req.body.tests
       )
@@ -131,6 +133,25 @@ app.post(
       });
     }
 
+    /* =====================================================
+       GENERATOR VALIDATION
+       ===================================================== */
+
+    if (
+      req.body?.generator !==
+        undefined &&
+      typeof req.body.generator !==
+        "object"
+    ) {
+
+      return res.status(400).json({
+        ok: false,
+
+        error:
+          "generator must be an object.",
+      });
+    }
+
     try {
 
       const result =
@@ -141,6 +162,19 @@ app.post(
           code:
             req.body.code,
 
+          /*
+           * Official solution used only when
+           * generated tests are requested.
+           */
+          referenceCode:
+            typeof req.body.referenceCode ===
+            "string"
+              ? req.body.referenceCode
+              : undefined,
+
+          /*
+           * Manual multi-test mode.
+           */
           tests:
             Array.isArray(
               req.body.tests
@@ -149,8 +183,13 @@ app.post(
               : undefined,
 
           /*
-           * Backward compatibility with
-           * our old single-test API.
+           * Generated-test mode.
+           */
+          generator:
+            req.body.generator,
+
+          /*
+           * Backward-compatible single-test mode.
            */
           input:
             typeof req.body.input ===
@@ -182,7 +221,7 @@ app.post(
     } catch (error) {
 
       console.error(
-        "Unexpected execution error:",
+        "Unexpected executor error:",
         error
       );
 
@@ -211,6 +250,5 @@ app.listen(
     console.log(
       `Elvoret executor listening on port ${PORT}`
     );
-
   }
 );

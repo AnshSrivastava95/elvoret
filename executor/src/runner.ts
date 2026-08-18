@@ -6,10 +6,15 @@ import {
   type ChildProcess,
 } from "child_process";
 
+import {
+  generateTests,
+} from "./testgenerator.js";
+
 import type {
   ExecuteRequest,
   ExecuteResponse,
   ExecuteTestCase,
+  GeneratedTestCase,
   TestCaseResult,
 } from "./types";
 
@@ -38,9 +43,6 @@ const DEFAULT_TIME_LIMIT_MS =
 const MAX_TIME_LIMIT_MS =
   10_000;
 
-/*
- * Small infrastructure/startup allowance.
- */
 const EXECUTION_BUFFER_MS =
   500;
 
@@ -110,6 +112,7 @@ async function ensureWorkRoot(): Promise<void> {
 function normalizeOutput(
   output: string
 ): string {
+
   return output
     .trim()
     .split(/\s+/)
@@ -120,25 +123,25 @@ function outputsMatch(
   actual: string,
   expected: string
 ): boolean {
+
   return (
-    normalizeOutput(actual) ===
-    normalizeOutput(expected)
+    normalizeOutput(
+      actual
+    ) ===
+    normalizeOutput(
+      expected
+    )
   );
 }
 
 /* =========================================================
-   TEST CASE NORMALIZATION
+   TEST CASE HELPERS
    ========================================================= */
 
-function getTestCases(
+function getManualTests(
   request: ExecuteRequest
 ): ExecuteTestCase[] {
 
-  /*
-   * Preferred API:
-   *
-   * tests: [...]
-   */
   if (
     Array.isArray(
       request.tests
@@ -168,23 +171,51 @@ function getTestCases(
   }
 
   /*
-   * Backward-compatible single test.
+   * Backward compatibility.
    */
-  return [
-    {
-      input:
-        typeof request.input ===
-        "string"
-          ? request.input
-          : "",
+  if (
+    typeof request.expectedOutput ===
+    "string"
+  ) {
 
-      expectedOutput:
-        typeof request.expectedOutput ===
-        "string"
-          ? request.expectedOutput
-          : "",
-    },
-  ];
+    return [
+      {
+        input:
+          typeof request.input ===
+          "string"
+            ? request.input
+            : "",
+
+        expectedOutput:
+          request.expectedOutput,
+      },
+    ];
+  }
+
+  return [];
+}
+
+/* =========================================================
+   GENERATED TESTS
+   ========================================================= */
+
+function buildGeneratedTests(
+  request: ExecuteRequest
+): GeneratedTestCase[] {
+
+  if (
+    !request.generator
+  ) {
+    return [];
+  }
+
+  return generateTests(
+    request.generator
+  )
+    .slice(
+      0,
+      MAX_TEST_CASES
+    );
 }
 
 /* =========================================================
@@ -208,11 +239,18 @@ export async function executeCpp(
 
     return {
       ok: false,
-      status: "SYSTEM_ERROR",
+
+      status:
+        "SYSTEM_ERROR",
+
       stdout: "",
+
       stderr: "",
+
       executionTimeMs: 0,
+
       exitCode: null,
+
       error:
         "Invalid code payload.",
     };
@@ -225,65 +263,25 @@ export async function executeCpp(
 
     return {
       ok: false,
-      status: "SYSTEM_ERROR",
+
+      status:
+        "SYSTEM_ERROR",
+
       stdout: "",
+
       stderr: "",
+
       executionTimeMs: 0,
+
       exitCode: null,
+
       error:
         "Source code is too large.",
     };
   }
 
   /* =======================================================
-     TEST CASES
-     ======================================================= */
-
-  const tests =
-    getTestCases(
-      request
-    );
-
-  if (
-    tests.length === 0
-  ) {
-
-    return {
-      ok: false,
-      status: "SYSTEM_ERROR",
-      stdout: "",
-      stderr: "",
-      executionTimeMs: 0,
-      exitCode: null,
-      error:
-        "At least one test case is required.",
-    };
-  }
-
-  for (
-    const test of tests
-  ) {
-
-    if (
-      test.input.length >
-      MAX_INPUT_SIZE
-    ) {
-
-      return {
-        ok: false,
-        status: "SYSTEM_ERROR",
-        stdout: "",
-        stderr: "",
-        executionTimeMs: 0,
-        exitCode: null,
-        error:
-          "Test input is too large.",
-      };
-    }
-  }
-
-  /* =======================================================
-     EXECUTION LIMIT
+     LIMIT
      ======================================================= */
 
   const timeLimitMs =
@@ -301,7 +299,7 @@ export async function executeCpp(
     EXECUTION_BUFFER_MS;
 
   /*
-   * Reserved for proper memory isolation later.
+   * Memory is reserved for the sandbox layer.
    */
   const memoryLimitMb =
     request.memoryLimitMb;
@@ -309,7 +307,7 @@ export async function executeCpp(
   void memoryLimitMb;
 
   /* =======================================================
-     JOB FILES
+     JOB DIRECTORY
      ======================================================= */
 
   const jobId =
@@ -321,16 +319,28 @@ export async function executeCpp(
       jobId
     );
 
-  const sourcePath =
+  const studentSourcePath =
     path.join(
       jobDirectory,
-      "main.cpp"
+      "student.cpp"
     );
 
-  const executablePath =
+  const studentExecutablePath =
     path.join(
       jobDirectory,
-      "main"
+      "student"
+    );
+
+  const referenceSourcePath =
+    path.join(
+      jobDirectory,
+      "reference.cpp"
+    );
+
+  const referenceExecutablePath =
+    path.join(
+      jobDirectory,
+      "reference"
     );
 
   try {
@@ -347,36 +357,66 @@ export async function executeCpp(
     );
 
     /* =====================================================
-       WRITE SOURCE
+       WRITE STUDENT SOURCE
        ===================================================== */
 
     await fs.writeFile(
-      sourcePath,
+      studentSourcePath,
       request.code,
       "utf8"
     );
 
     /* =====================================================
-       COMPILE ONCE
+       DETERMINE TEST MODE
        ===================================================== */
 
-    const compileResult =
+    const hasGeneratedTests =
+      Boolean(
+        request.generator
+      );
+
+    const hasManualTests =
+      Array.isArray(
+        request.tests
+      );
+
+    const hasLegacySingleTest =
+      !hasManualTests &&
+      !hasGeneratedTests &&
+      typeof request.expectedOutput ===
+        "string";
+
+    /*
+     * If no expected output/tests/generator exist,
+     * we're doing raw execution only.
+     */
+    const isRawRun =
+      !hasGeneratedTests &&
+      !hasManualTests &&
+      !hasLegacySingleTest;
+
+    /* =====================================================
+       COMPILE STUDENT
+       ===================================================== */
+
+    const studentCompileResult =
       await runProcess(
         "g++",
         [
-          sourcePath,
+          studentSourcePath,
           "-std=c++17",
           "-O2",
           "-pipe",
           "-o",
-          executablePath,
+          studentExecutablePath,
         ],
         {
           cwd:
             jobDirectory,
 
           /*
-           * No compilation timeout.
+           * Compilation deliberately has
+           * no timeout at this stage.
            */
           stdin: "",
 
@@ -386,11 +426,11 @@ export async function executeCpp(
       );
 
     /* =====================================================
-       COMPILER OUTPUT LIMIT
+       STUDENT COMPILE ERROR
        ===================================================== */
 
     if (
-      compileResult.outputLimitExceeded
+      studentCompileResult.outputLimitExceeded
     ) {
 
       return {
@@ -400,27 +440,21 @@ export async function executeCpp(
           "OUTPUT_LIMIT_EXCEEDED",
 
         stdout:
-          compileResult.stdout,
+          studentCompileResult.stdout,
 
         stderr:
-          compileResult.stderr,
+          studentCompileResult.stderr,
 
         executionTimeMs:
-          compileResult.executionTimeMs,
+          studentCompileResult.executionTimeMs,
 
         exitCode:
-          compileResult.exitCode,
-
-        testResults: [],
+          studentCompileResult.exitCode,
       };
     }
 
-    /* =====================================================
-       COMPILATION ERROR
-       ===================================================== */
-
     if (
-      compileResult.exitCode !==
+      studentCompileResult.exitCode !==
       0
     ) {
 
@@ -431,23 +465,430 @@ export async function executeCpp(
           "COMPILATION_ERROR",
 
         stdout:
-          compileResult.stdout,
+          studentCompileResult.stdout,
 
         stderr:
-          compileResult.stderr,
+          studentCompileResult.stderr,
 
         executionTimeMs:
-          compileResult.executionTimeMs,
+          studentCompileResult.executionTimeMs,
 
         exitCode:
-          compileResult.exitCode,
-
-        testResults: [],
+          studentCompileResult.exitCode,
       };
     }
 
     /* =====================================================
-       RUN TEST CASES
+       RAW RUN MODE
+       ===================================================== */
+
+    if (
+      isRawRun
+    ) {
+
+      const input =
+        typeof request.input ===
+        "string"
+          ? request.input
+          : "";
+
+      if (
+        input.length >
+        MAX_INPUT_SIZE
+      ) {
+
+        return {
+          ok: false,
+
+          status:
+            "SYSTEM_ERROR",
+
+          stdout: "",
+
+          stderr: "",
+
+          executionTimeMs: 0,
+
+          exitCode: null,
+
+          error:
+            "Input is too large.",
+        };
+      }
+
+      const executionResult =
+        await runProcess(
+          studentExecutablePath,
+          [],
+          {
+            cwd:
+              jobDirectory,
+
+            timeoutMs:
+              executionTimeoutMs,
+
+            stdin:
+              input,
+
+            maxOutputBytes:
+              MAX_OUTPUT_SIZE,
+          }
+        );
+
+      return buildRawExecutionResponse(
+        executionResult
+      );
+    }
+
+    /* =====================================================
+       BUILD TEST CASES
+       ===================================================== */
+
+    let tests:
+      ExecuteTestCase[] = [];
+
+    if (
+      hasGeneratedTests
+    ) {
+
+      /*
+       * Generated tests initially contain only input.
+       * Expected outputs are produced by the
+       * reference solution below.
+       */
+      const generated =
+        buildGeneratedTests(
+          request
+        );
+
+      if (
+        generated.length === 0
+      ) {
+
+        return {
+          ok: false,
+
+          status:
+            "INVALID_TEST_SUITE",
+
+          stdout: "",
+
+          stderr: "",
+
+          executionTimeMs: 0,
+
+          exitCode: null,
+
+          error:
+            "Test generator produced no tests.",
+        };
+      }
+
+      /*
+       * If we're generating tests, a reference
+       * solution is mandatory.
+       */
+      if (
+        typeof request.referenceCode !==
+        "string" ||
+        request.referenceCode.trim()
+          .length === 0
+      ) {
+
+        return {
+          ok: false,
+
+          status:
+            "INVALID_TEST_SUITE",
+
+          stdout: "",
+
+          stderr: "",
+
+          executionTimeMs: 0,
+
+          exitCode: null,
+
+          error:
+            "referenceCode is required when using a test generator.",
+        };
+      }
+
+      if (
+        request.referenceCode.length >
+        MAX_CODE_SIZE
+      ) {
+
+        return {
+          ok: false,
+
+          status:
+            "INVALID_TEST_SUITE",
+
+          stdout: "",
+
+          stderr: "",
+
+          executionTimeMs: 0,
+
+          exitCode: null,
+
+          error:
+            "Reference solution is too large.",
+        };
+      }
+
+      /* ===================================================
+         WRITE REFERENCE
+         =================================================== */
+
+      await fs.writeFile(
+        referenceSourcePath,
+        request.referenceCode,
+        "utf8"
+      );
+
+      /* ===================================================
+         COMPILE REFERENCE
+         =================================================== */
+
+      const referenceCompileResult =
+        await runProcess(
+          "g++",
+          [
+            referenceSourcePath,
+            "-std=c++17",
+            "-O2",
+            "-pipe",
+            "-o",
+            referenceExecutablePath,
+          ],
+          {
+            cwd:
+              jobDirectory,
+
+            /*
+             * No compilation timeout yet.
+             */
+            stdin: "",
+
+            maxOutputBytes:
+              MAX_OUTPUT_SIZE,
+          }
+        );
+
+      /* ===================================================
+         REFERENCE COMPILATION FAILED
+         =================================================== */
+
+      if (
+        referenceCompileResult.exitCode !==
+        0
+      ) {
+
+        return {
+          ok: false,
+
+          status:
+            "INVALID_TEST_SUITE",
+
+          stdout: "",
+
+          stderr:
+            referenceCompileResult.stderr,
+
+          executionTimeMs:
+            referenceCompileResult.executionTimeMs,
+
+          exitCode:
+            referenceCompileResult.exitCode,
+
+          error:
+            "Reference solution failed to compile.",
+        };
+      }
+
+      /* ===================================================
+         GENERATE EXPECTED OUTPUTS
+         =================================================== */
+
+      for (
+        const generatedTest of
+          generated
+      ) {
+
+        if (
+          generatedTest.input
+            .length >
+          MAX_INPUT_SIZE
+        ) {
+
+          return {
+            ok: false,
+
+            status:
+              "INVALID_TEST_SUITE",
+
+            stdout: "",
+
+            stderr: "",
+
+            executionTimeMs: 0,
+
+            exitCode: null,
+
+            error:
+              "Generated test input is too large.",
+          };
+        }
+
+        const referenceResult =
+          await runProcess(
+            referenceExecutablePath,
+            [],
+            {
+              cwd:
+                jobDirectory,
+
+              /*
+               * Reference execution gets the same
+               * problem limit plus buffer.
+               */
+              timeoutMs:
+                executionTimeoutMs,
+
+              stdin:
+                generatedTest.input,
+
+              maxOutputBytes:
+                MAX_OUTPUT_SIZE,
+            }
+          );
+
+        if (
+          referenceResult.timedOut
+        ) {
+
+          return {
+            ok: false,
+
+            status:
+              "INVALID_TEST_SUITE",
+
+            stdout: "",
+
+            stderr:
+              referenceResult.stderr,
+
+            executionTimeMs:
+              referenceResult.executionTimeMs,
+
+            exitCode: null,
+
+            error:
+              "Reference solution exceeded the execution limit.",
+          };
+        }
+
+        if (
+          referenceResult.outputLimitExceeded
+        ) {
+
+          return {
+            ok: false,
+
+            status:
+              "INVALID_TEST_SUITE",
+
+            stdout: "",
+
+            stderr:
+              referenceResult.stderr,
+
+            executionTimeMs:
+              referenceResult.executionTimeMs,
+
+            exitCode:
+              referenceResult.exitCode,
+
+            error:
+              "Reference solution produced too much output.",
+          };
+        }
+
+        if (
+          referenceResult.exitCode !==
+          0
+        ) {
+
+          return {
+            ok: false,
+
+            status:
+              "INVALID_TEST_SUITE",
+
+            stdout:
+              referenceResult.stdout,
+
+            stderr:
+              referenceResult.stderr,
+
+            executionTimeMs:
+              referenceResult.executionTimeMs,
+
+            exitCode:
+              referenceResult.exitCode,
+
+            error:
+              "Reference solution failed while generating expected output.",
+          };
+        }
+
+        tests.push({
+          input:
+            generatedTest.input,
+
+          expectedOutput:
+            referenceResult.stdout,
+        });
+      }
+
+    } else {
+
+      /*
+       * Manual tests.
+       */
+      tests =
+        getManualTests(
+          request
+        );
+    }
+
+    if (
+      tests.length === 0
+    ) {
+
+      return {
+        ok: false,
+
+        status:
+          "INVALID_TEST_SUITE",
+
+        stdout: "",
+
+        stderr: "",
+
+        executionTimeMs: 0,
+
+        exitCode: null,
+
+        error:
+          "No test cases were supplied.",
+      };
+    }
+
+    /* =====================================================
+       RUN STUDENT AGAINST TESTS
        ===================================================== */
 
     const testResults:
@@ -470,7 +911,7 @@ export async function executeCpp(
 
       const executionResult =
         await runProcess(
-          executablePath,
+          studentExecutablePath,
           [],
           {
             cwd:
@@ -491,7 +932,7 @@ export async function executeCpp(
         executionResult.executionTimeMs;
 
       /* ===================================================
-         TIME LIMIT
+         TLE
          =================================================== */
 
       if (
@@ -500,6 +941,7 @@ export async function executeCpp(
 
         const result:
           TestCaseResult = {
+
           testNumber,
 
           status:
@@ -566,6 +1008,7 @@ export async function executeCpp(
 
         const result:
           TestCaseResult = {
+
           testNumber,
 
           status:
@@ -616,9 +1059,6 @@ export async function executeCpp(
 
           failedTest:
             testNumber,
-
-          expectedOutput:
-            test.expectedOutput,
         };
       }
 
@@ -633,6 +1073,7 @@ export async function executeCpp(
 
         const result:
           TestCaseResult = {
+
           testNumber,
 
           status:
@@ -683,14 +1124,11 @@ export async function executeCpp(
 
           failedTest:
             testNumber,
-
-          expectedOutput:
-            test.expectedOutput,
         };
       }
 
       /* ===================================================
-         OUTPUT COMPARISON
+         WRONG ANSWER
          =================================================== */
 
       const matches =
@@ -699,41 +1137,11 @@ export async function executeCpp(
           test.expectedOutput
         );
 
-      /*
-       * TEMPORARY DEBUG LOG.
-       *
-       * We will remove this after the multi-test
-       * behavior is verified.
-       */
-      console.log(
-        "JUDGE_RESULT",
-        JSON.stringify({
-          testNumber,
-
-          actual:
-            executionResult.stdout,
-
-          expected:
-            test.expectedOutput,
-
-          normalizedActual:
-            normalizeOutput(
-              executionResult.stdout
-            ),
-
-          normalizedExpected:
-            normalizeOutput(
-              test.expectedOutput
-            ),
-
-          matches,
-        })
-      );
-
       if (!matches) {
 
         const result:
           TestCaseResult = {
+
           testNumber,
 
           status:
@@ -791,10 +1199,11 @@ export async function executeCpp(
       }
 
       /* ===================================================
-         TEST PASSED
+         PASSED
          =================================================== */
 
       testResults.push({
+
         testNumber,
 
         status:
@@ -838,7 +1247,15 @@ export async function executeCpp(
       stderr: "",
 
       executionTimeMs:
-        totalExecutionTimeMs,
+        testResults.reduce(
+          (
+            total,
+            result
+          ) =>
+            total +
+            result.executionTimeMs,
+          0
+        ),
 
       exitCode: 0,
 
@@ -874,17 +1291,12 @@ export async function executeCpp(
 
   } finally {
 
-    /* =====================================================
-       CLEANUP
-       ===================================================== */
-
     try {
 
       await fs.rm(
         jobDirectory,
         {
           recursive: true,
-
           force: true,
         }
       );
@@ -897,6 +1309,106 @@ export async function executeCpp(
       );
     }
   }
+}
+
+/* =========================================================
+   RAW EXECUTION RESPONSE
+   ========================================================= */
+
+function buildRawExecutionResponse(
+  result: ProcessResult
+): ExecuteResponse {
+
+  if (
+    result.timedOut
+  ) {
+
+    return {
+      ok: false,
+
+      status:
+        "TIME_LIMIT_EXCEEDED",
+
+      stdout:
+        result.stdout,
+
+      stderr:
+        result.stderr,
+
+      executionTimeMs:
+        result.executionTimeMs,
+
+      exitCode:
+        null,
+    };
+  }
+
+  if (
+    result.outputLimitExceeded
+  ) {
+
+    return {
+      ok: false,
+
+      status:
+        "OUTPUT_LIMIT_EXCEEDED",
+
+      stdout:
+        result.stdout,
+
+      stderr:
+        result.stderr,
+
+      executionTimeMs:
+        result.executionTimeMs,
+
+      exitCode:
+        result.exitCode,
+    };
+  }
+
+  if (
+    result.exitCode !== 0
+  ) {
+
+    return {
+      ok: false,
+
+      status:
+        "RUNTIME_ERROR",
+
+      stdout:
+        result.stdout,
+
+      stderr:
+        result.stderr,
+
+      executionTimeMs:
+        result.executionTimeMs,
+
+      exitCode:
+        result.exitCode,
+    };
+  }
+
+  return {
+    ok: true,
+
+    status:
+      "ACCEPTED",
+
+    stdout:
+      result.stdout,
+
+    stderr:
+      result.stderr,
+
+    executionTimeMs:
+      result.executionTimeMs,
+
+    exitCode:
+      result.exitCode,
+  };
 }
 
 /* =========================================================
@@ -919,14 +1431,12 @@ function runProcess(
 
       let stderr = "";
 
-      let timedOut =
-        false;
+      let timedOut = false;
 
       let outputLimitExceeded =
         false;
 
-      let finished =
-        false;
+      let finished = false;
 
       /* ===================================================
          SPAWN
@@ -975,8 +1485,7 @@ function runProcess(
             return;
           }
 
-          finished =
-            true;
+          finished = true;
 
           const end =
             process.hrtime.bigint();
@@ -1023,8 +1532,7 @@ function runProcess(
                 return;
               }
 
-              timedOut =
-                true;
+              timedOut = true;
 
               child.kill(
                 "SIGKILL"
@@ -1152,7 +1660,9 @@ function runProcess(
             );
           }
 
-          finish(code);
+          finish(
+            code
+          );
         }
       );
 
@@ -1179,7 +1689,9 @@ function runProcess(
           stderr +=
             error.message;
 
-          finish(null);
+          finish(
+            null
+          );
         }
       );
     }
