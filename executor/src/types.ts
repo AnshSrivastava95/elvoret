@@ -19,20 +19,20 @@ export interface ExecuteRequest {
   input?: string;
 
   /*
-   * Expected output for this test.
+   * Expected output for the supplied test.
    *
-   * If omitted, the executor only checks whether
-   * the program compiled and exited successfully.
+   * If present, the executor compares the
+   * program's stdout against this value.
    */
   expectedOutput?: string;
 
   /*
-   * Problem execution limit.
+   * Problem time limit in milliseconds.
    */
   timeLimitMs?: number;
 
   /*
-   * Reserved for the memory-limiting layer.
+   * Reserved for the future memory-limit layer.
    */
   memoryLimitMb?: number;
 }
@@ -51,12 +51,13 @@ export interface ExecuteResponse {
   exitCode: number | null;
 
   /*
-   * Present when the output does not match.
+   * Returned when the program produces
+   * an incorrect answer.
    */
   expectedOutput?: string;
 
   /*
-   * Optional human-readable explanation.
+   * Optional system/execution message.
    */
   error?: string;
 }

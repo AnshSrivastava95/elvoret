@@ -34,12 +34,12 @@ const MAX_TIME_LIMIT_MS =
   10_000;
 
 /*
- * Infrastructure/startup buffer.
+ * Small infrastructure buffer.
  *
  * Example:
  *
- * Problem limit = 2000ms
- * Executor kill = 2500ms
+ * Problem limit = 2000 ms
+ * Executor timeout = 2500 ms
  */
 const EXECUTION_BUFFER_MS =
   500;
@@ -104,22 +104,18 @@ async function ensureWorkRoot(): Promise<void> {
    OUTPUT NORMALIZATION
    ========================================================= */
 
-/**
- * Normalize competitive-programming output.
+/*
+ * Competitive programming output comparison:
  *
- * This ignores:
- * - multiple spaces
- * - tabs
- * - newlines
- * - leading/trailing whitespace
+ * "12"
+ * " 12 "
+ * "12\n"
+ * "12    "
  *
- * Example:
+ * are treated as equivalent.
  *
- * "1  2\n3\n"
- *
- * becomes:
- *
- * "1 2 3"
+ * Multiple whitespace characters are treated
+ * as a single separator.
  */
 function normalizeOutput(
   output: string
@@ -130,9 +126,6 @@ function normalizeOutput(
     .join(" ");
 }
 
-/**
- * Compare program output with expected output.
- */
 function outputsMatch(
   actual: string,
   expected: string
@@ -158,7 +151,8 @@ export async function executeCpp(
      ======================================================= */
 
   if (
-    typeof request.code !== "string"
+    typeof request.code !==
+    "string"
   ) {
     return {
       ok: false,
@@ -193,7 +187,8 @@ export async function executeCpp(
      ======================================================= */
 
   const input =
-    typeof request.input === "string"
+    typeof request.input ===
+    "string"
       ? request.input
       : "";
 
@@ -232,7 +227,8 @@ export async function executeCpp(
     EXECUTION_BUFFER_MS;
 
   /*
-   * Reserved for the memory-isolation layer.
+   * Memory is accepted by the API but not
+   * enforced yet.
    */
   const memoryLimitMb =
     request.memoryLimitMb;
@@ -278,7 +274,7 @@ export async function executeCpp(
     );
 
     /* =====================================================
-       WRITE SOURCE FILE
+       WRITE SOURCE
        ===================================================== */
 
     await fs.writeFile(
@@ -291,6 +287,9 @@ export async function executeCpp(
        COMPILE
        ===================================================== */
 
+    /*
+     * NO COMPILATION TIMEOUT.
+     */
     const compileResult =
       await runProcess(
         "g++",
@@ -306,9 +305,6 @@ export async function executeCpp(
           cwd:
             jobDirectory,
 
-          /*
-           * No compile timeout.
-           */
           stdin: "",
 
           maxOutputBytes:
@@ -327,50 +323,42 @@ export async function executeCpp(
         ok: false,
         status:
           "OUTPUT_LIMIT_EXCEEDED",
-
         stdout:
           compileResult.stdout,
-
         stderr:
           compileResult.stderr,
-
         executionTimeMs:
           compileResult.executionTimeMs,
-
         exitCode:
           compileResult.exitCode,
       };
     }
 
     /* =====================================================
-       COMPILATION FAILED
+       COMPILATION ERROR
        ===================================================== */
 
     if (
-      compileResult.exitCode !== 0
+      compileResult.exitCode !==
+      0
     ) {
       return {
         ok: false,
-
         status:
           "COMPILATION_ERROR",
-
         stdout:
           compileResult.stdout,
-
         stderr:
           compileResult.stderr,
-
         executionTimeMs:
           compileResult.executionTimeMs,
-
         exitCode:
           compileResult.exitCode,
       };
     }
 
     /* =====================================================
-       EXECUTE PROGRAM
+       RUN PROGRAM
        ===================================================== */
 
     const executionResult =
@@ -401,21 +389,15 @@ export async function executeCpp(
     ) {
       return {
         ok: false,
-
         status:
           "TIME_LIMIT_EXCEEDED",
-
         stdout:
           executionResult.stdout,
-
         stderr:
           executionResult.stderr,
-
         executionTimeMs:
           executionResult.executionTimeMs,
-
-        exitCode:
-          null,
+        exitCode: null,
       };
     }
 
@@ -428,19 +410,14 @@ export async function executeCpp(
     ) {
       return {
         ok: false,
-
         status:
           "OUTPUT_LIMIT_EXCEEDED",
-
         stdout:
           executionResult.stdout,
-
         stderr:
           executionResult.stderr,
-
         executionTimeMs:
           executionResult.executionTimeMs,
-
         exitCode:
           executionResult.exitCode,
       };
@@ -451,53 +428,82 @@ export async function executeCpp(
        ===================================================== */
 
     if (
-      executionResult.exitCode !== 0
+      executionResult.exitCode !==
+      0
     ) {
       return {
         ok: false,
-
         status:
           "RUNTIME_ERROR",
-
         stdout:
           executionResult.stdout,
-
         stderr:
           executionResult.stderr,
-
         executionTimeMs:
           executionResult.executionTimeMs,
-
         exitCode:
           executionResult.exitCode,
       };
     }
 
     /* =====================================================
-       WRONG ANSWER
+       OUTPUT JUDGING
        ===================================================== */
 
     /*
-     * Only compare output when the caller supplies
-     * expectedOutput.
+     * IMPORTANT:
      *
-     * This lets us continue using the executor for
-     * simple "Run" operations where there is no
-     * expected answer.
+     * If expectedOutput exists, we MUST compare it.
+     *
+     * We deliberately do not use truthiness here because
+     * an expected output such as "" is still a valid value.
      */
     if (
-      typeof request.expectedOutput ===
-      "string"
+      Object.prototype.hasOwnProperty.call(
+        request,
+        "expectedOutput"
+      )
     ) {
+
+      const expected =
+        typeof request.expectedOutput ===
+        "string"
+          ? request.expectedOutput
+          : "";
+
+      const actual =
+        executionResult.stdout;
 
       const matches =
         outputsMatch(
-          executionResult.stdout,
-          request.expectedOutput
+          actual,
+          expected
         );
 
-      if (!matches) {
+      /*
+       * TEMPORARY SERVER LOG
+       *
+       * This makes the deployed Render logs explicitly
+       * show what the judge compared.
+       */
+      console.log(
+        "JUDGE_RESULT",
+        JSON.stringify({
+          actual,
+          expected,
+          normalizedActual:
+            normalizeOutput(
+              actual
+            ),
+          normalizedExpected:
+            normalizeOutput(
+              expected
+            ),
+          matches,
+        })
+      );
 
+      if (!matches) {
         return {
           ok: false,
 
@@ -505,7 +511,7 @@ export async function executeCpp(
             "WRONG_ANSWER",
 
           stdout:
-            executionResult.stdout,
+            actual,
 
           stderr:
             executionResult.stderr,
@@ -517,7 +523,7 @@ export async function executeCpp(
             executionResult.exitCode,
 
           expectedOutput:
-            request.expectedOutput,
+            expected,
         };
       }
     }
@@ -684,15 +690,10 @@ function runProcess(
 
           resolve({
             stdout,
-
             stderr,
-
             exitCode,
-
             executionTimeMs,
-
             timedOut,
-
             outputLimitExceeded,
           });
         };
@@ -719,7 +720,8 @@ function runProcess(
                 return;
               }
 
-              timedOut = true;
+              timedOut =
+                true;
 
               child.kill(
                 "SIGKILL"
