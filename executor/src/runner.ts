@@ -43,14 +43,14 @@ const MAX_OUTPUT_SIZE =
   1_000_000;
 
 /*
- * Default execution time.
+ * Default execution time for submitted programs.
  */
 const DEFAULT_TIME_LIMIT_MS =
   2_000;
 
 /*
- * Maximum time that the API will allow
- * a request to specify.
+ * Maximum execution time that the API
+ * will allow a submitted program to request.
  */
 const MAX_TIME_LIMIT_MS =
   10_000;
@@ -62,7 +62,13 @@ const MAX_TIME_LIMIT_MS =
 interface ProcessOptions {
   cwd: string;
 
-  timeoutMs: number;
+  /*
+   * Optional.
+   *
+   * Compilation does not use a timeout.
+   * User-program execution does.
+   */
+  timeoutMs?: number;
 
   stdin: string;
 
@@ -89,11 +95,6 @@ interface ProcessResult {
 
 /**
  * Create a unique ID for each execution.
- *
- * Example:
- *
- * /tmp/elvoret-executor/
- *     └── 550e8400-e29b-41d4-a716-446655440000/
  */
 function createJobId(): string {
   return crypto.randomUUID();
@@ -146,21 +147,14 @@ export async function executeCpp(
     typeof request.code !==
     "string"
   ) {
-
     return {
       ok: false,
-
       status:
         "SYSTEM_ERROR",
-
       stdout: "",
-
       stderr: "",
-
       executionTimeMs: 0,
-
       exitCode: null,
-
       error:
         "Invalid code payload.",
     };
@@ -170,21 +164,14 @@ export async function executeCpp(
     request.code.length >
     MAX_CODE_SIZE
   ) {
-
     return {
       ok: false,
-
       status:
         "SYSTEM_ERROR",
-
       stdout: "",
-
       stderr: "",
-
       executionTimeMs: 0,
-
       exitCode: null,
-
       error:
         "Source code is too large.",
     };
@@ -204,28 +191,21 @@ export async function executeCpp(
     input.length >
     MAX_INPUT_SIZE
   ) {
-
     return {
       ok: false,
-
       status:
         "SYSTEM_ERROR",
-
       stdout: "",
-
       stderr: "",
-
       executionTimeMs: 0,
-
       exitCode: null,
-
       error:
         "Input is too large.",
     };
   }
 
   /* =======================================================
-     LIMITS
+     EXECUTION LIMIT
      ======================================================= */
 
   const timeLimitMs =
@@ -239,15 +219,11 @@ export async function executeCpp(
     );
 
   /*
-   * Memory limits are part of the request model,
-   * but we are deliberately NOT enforcing them yet.
+   * Memory limits are accepted by the API contract,
+   * but are not enforced yet.
    *
-   * Proper memory isolation should be added when
+   * Proper memory isolation will be added when
    * we harden the sandbox.
-   *
-   * Keeping this here means the API contract can
-   * already accept memoryLimitMb without pretending
-   * it is currently enforced.
    */
   const memoryLimitMb =
     request.memoryLimitMb;
@@ -306,38 +282,30 @@ export async function executeCpp(
        COMPILE
        ===================================================== */
 
+    /*
+     * IMPORTANT:
+     *
+     * There is deliberately NO timeoutMs here.
+     *
+     * The compile phase is separate from the
+     * problem's execution time limit.
+     */
     const compileResult =
       await runProcess(
         "g++",
         [
           sourcePath,
-
           "-std=c++17",
-
           "-O2",
-
           "-pipe",
-
           "-o",
-
           executablePath,
         ],
         {
           cwd:
             jobDirectory,
 
-          /*
-           * Compilation should never be allowed
-           * to run indefinitely.
-           */
-          timeoutMs:
-            Math.min(
-              timeLimitMs,
-              10_000
-            ),
-
-          stdin:
-            "",
+          stdin: "",
 
           maxOutputBytes:
             MAX_OUTPUT_SIZE,
@@ -348,10 +316,15 @@ export async function executeCpp(
        COMPILATION TIMEOUT
        ===================================================== */
 
+    /*
+     * This should normally never happen now because
+     * compilation has no timeout.
+     *
+     * Kept for compatibility with the ProcessResult type.
+     */
     if (
       compileResult.timedOut
     ) {
-
       return {
         ok: false,
 
@@ -379,7 +352,6 @@ export async function executeCpp(
     if (
       compileResult.outputLimitExceeded
     ) {
-
       return {
         ok: false,
 
@@ -408,7 +380,6 @@ export async function executeCpp(
       compileResult.exitCode !==
       0
     ) {
-
       return {
         ok: false,
 
@@ -441,6 +412,10 @@ export async function executeCpp(
           cwd:
             jobDirectory,
 
+          /*
+           * This is the actual problem
+           * execution time limit.
+           */
           timeoutMs:
             timeLimitMs,
 
@@ -459,7 +434,6 @@ export async function executeCpp(
     if (
       executionResult.timedOut
     ) {
-
       return {
         ok: false,
 
@@ -487,7 +461,6 @@ export async function executeCpp(
     if (
       executionResult.outputLimitExceeded
     ) {
-
       return {
         ok: false,
 
@@ -516,7 +489,6 @@ export async function executeCpp(
       executionResult.exitCode !==
       0
     ) {
-
       return {
         ok: false,
 
@@ -599,7 +571,6 @@ export async function executeCpp(
         jobDirectory,
         {
           recursive: true,
-
           force: true,
         }
       );
@@ -625,12 +596,12 @@ export async function executeCpp(
  * - stderr
  * - exit code
  * - execution time
- * - timeout
+ * - optional timeout
  * - output limit
  *
  * NOTE:
  *
- * This is the initial executor implementation.
+ * This is still the initial execution implementation.
  * It is NOT yet the final security sandbox for arbitrary
  * public submissions.
  */
@@ -672,11 +643,9 @@ function runProcess(
          =================================================== */
 
       /*
-       * We explicitly cast the result to ChildProcess.
-       *
-       * This avoids the Node type overload intersection
-       * that was causing TypeScript to resolve `child`
-       * to `never`.
+       * Explicit ChildProcess cast prevents the
+       * Node type-overload issue that previously
+       * turned `child` into `never`.
        */
 
       const child =
@@ -687,13 +656,6 @@ function runProcess(
             cwd:
               options.cwd,
 
-            /*
-             * Explicit pipes for:
-             *
-             * stdin
-             * stdout
-             * stderr
-             */
             stdio: [
               "pipe",
               "pipe",
@@ -701,10 +663,8 @@ function runProcess(
             ],
 
             /*
-             * Preserve the existing environment,
-             * then override only the values we need.
-             *
-             * This fixes the ProcessEnv typing error.
+             * Keep the existing environment while
+             * overriding only what we need.
              */
             env: {
               ...process.env,
@@ -747,7 +707,6 @@ function runProcess(
             ) / 1_000_000;
 
           resolve({
-
             stdout,
 
             stderr,
@@ -759,38 +718,47 @@ function runProcess(
             timedOut,
 
             outputLimitExceeded,
-
           });
         };
 
       /* ===================================================
-         TIMEOUT
+         OPTIONAL TIMEOUT
          =================================================== */
 
-      const timeout =
-        setTimeout(
-          () => {
+      let timeout:
+        ReturnType<
+          typeof setTimeout
+        > | undefined;
 
-            if (finished) {
-              return;
-            }
+      /*
+       * Compilation passes no timeoutMs.
+       *
+       * Student execution passes timeoutMs.
+       */
+      if (
+        options.timeoutMs !==
+        undefined
+      ) {
 
-            timedOut =
-              true;
+        timeout =
+          setTimeout(
+            () => {
 
-            /*
-             * Kill the process.
-             *
-             * Later we will replace this with
-             * stronger process-group/sandbox controls.
-             */
-            child.kill(
-              "SIGKILL"
-            );
+              if (finished) {
+                return;
+              }
 
-          },
-          options.timeoutMs
-        );
+              timedOut =
+                true;
+
+              child.kill(
+                "SIGKILL"
+              );
+
+            },
+            options.timeoutMs
+          );
+      }
 
       /* ===================================================
          STDIN
@@ -828,10 +796,6 @@ function runProcess(
 
             stdout +=
               chunk.toString();
-
-            /* =============================================
-               OUTPUT LIMIT
-               ============================================= */
 
             if (
               Buffer.byteLength(
@@ -874,10 +838,6 @@ function runProcess(
             stderr +=
               chunk.toString();
 
-            /* =============================================
-               OUTPUT LIMIT
-               ============================================= */
-
             if (
               Buffer.byteLength(
                 stderr,
@@ -908,9 +868,14 @@ function runProcess(
             number | null
         ) => {
 
-          clearTimeout(
+          if (
             timeout
-          );
+          ) {
+
+            clearTimeout(
+              timeout
+            );
+          }
 
           finish(
             code
@@ -929,9 +894,14 @@ function runProcess(
             Error
         ) => {
 
-          clearTimeout(
+          if (
             timeout
-          );
+          ) {
+
+            clearTimeout(
+              timeout
+            );
+          }
 
           stderr +=
             error.message;
