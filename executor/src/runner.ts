@@ -55,6 +55,20 @@ const DEFAULT_TIME_LIMIT_MS =
 const MAX_TIME_LIMIT_MS =
   10_000;
 
+/*
+ * Small infrastructure/startup allowance.
+ *
+ * Example:
+ *
+ * Problem limit = 2000 ms
+ * Actual executor kill = 2500 ms
+ *
+ * This prevents small startup/scheduling overhead
+ * from incorrectly becoming a TLE.
+ */
+const EXECUTION_BUFFER_MS =
+  500;
+
 /* =========================================================
    TYPES
    ========================================================= */
@@ -219,6 +233,20 @@ export async function executeCpp(
     );
 
   /*
+   * The actual timeout given to the child process
+   * includes a small infrastructure buffer.
+   *
+   * Example:
+   *
+   * 2000 ms problem limit
+   * + 500 ms buffer
+   * = 2500 ms process timeout
+   */
+  const executionTimeoutMs =
+    timeLimitMs +
+    EXECUTION_BUFFER_MS;
+
+  /*
    * Memory limits are accepted by the API contract,
    * but are not enforced yet.
    *
@@ -317,7 +345,7 @@ export async function executeCpp(
        ===================================================== */
 
     /*
-     * This should normally never happen now because
+     * This should normally never happen because
      * compilation has no timeout.
      *
      * Kept for compatibility with the ProcessResult type.
@@ -413,11 +441,10 @@ export async function executeCpp(
             jobDirectory,
 
           /*
-           * This is the actual problem
-           * execution time limit.
+           * Actual problem limit + startup buffer.
            */
           timeoutMs:
-            timeLimitMs,
+            executionTimeoutMs,
 
           stdin:
             input,
@@ -647,7 +674,6 @@ function runProcess(
        * Node type-overload issue that previously
        * turned `child` into `never`.
        */
-
       const child =
         spawn(
           command,
