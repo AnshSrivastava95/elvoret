@@ -6,46 +6,454 @@ import {
   Send,
   RotateCcw,
   CheckCircle2,
+  XCircle,
+  Clock3,
+  AlertTriangle,
   Code2,
   Terminal,
+  Loader2,
 } from "lucide-react";
+
+/* =========================================================
+   TYPES
+   ========================================================= */
 
 interface Example {
   input: string;
   output: string;
 }
 
+interface TestResult {
+  testNumber: number;
+  status: string;
+  input?: string;
+  expectedOutput?: string;
+  stdout?: string;
+  stderr?: string;
+  executionTimeMs?: number;
+  exitCode?: number | null;
+}
+
+interface ExecutorResponse {
+  ok: boolean;
+  status?: string;
+
+  stdout?: string;
+  stderr?: string;
+
+  executionTimeMs?: number;
+
+  exitCode?: number | null;
+
+  failedTest?: number;
+
+  expectedOutput?: string;
+
+  testResults?: TestResult[];
+
+  error?: string;
+}
+
 interface CodingWorkspaceProps {
+  /*
+   * Needed so /api/executor can load the correct
+   * MDX problem on the server.
+   */
+  slug: string;
+
   language: string;
+
   starterCode: string;
+
   examples: Example[];
 }
 
+/* =========================================================
+   COMPONENT
+   ========================================================= */
+
 export default function CodingWorkspace({
+  slug,
   language,
   starterCode,
   examples,
 }: CodingWorkspaceProps) {
-  const [code, setCode] = useState(starterCode);
-  const [submitted, setSubmitted] = useState(false);
-  const [running, setRunning] = useState(false);
+
+  const [code, setCode] =
+    useState(starterCode);
+
+  const [running, setRunning] =
+    useState(false);
+
+  const [submitting, setSubmitting] =
+    useState(false);
+
+  const [result, setResult] =
+    useState<ExecutorResponse | null>(
+      null
+    );
+
+  const [error, setError] =
+    useState<string | null>(
+      null
+    );
+
+  /* =======================================================
+     RESET
+     ======================================================= */
 
   const resetCode = () => {
-    setCode(starterCode);
-    setSubmitted(false);
+    setCode(
+      starterCode
+    );
+
+    setResult(null);
+
+    setError(null);
   };
 
-  const handleRun = () => {
-    setRunning(true);
+  /* =======================================================
+     EXECUTOR REQUEST
+     ======================================================= */
 
-    setTimeout(() => {
+  const execute = async (
+    mode: "run" | "submit"
+  ) => {
+
+    /*
+     * Prevent duplicate requests.
+     */
+    if (
+      running ||
+      submitting
+    ) {
+      return;
+    }
+
+    /*
+     * Clear previous state.
+     */
+    setError(null);
+
+    setResult(null);
+
+    if (
+      mode === "run"
+    ) {
+      setRunning(true);
+    } else {
+      setSubmitting(true);
+    }
+
+    try {
+
+      const response =
+        await fetch(
+          "/api/executor",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                slug,
+
+                code,
+
+                language:
+                  language.toLowerCase(),
+
+                mode,
+              }),
+          }
+        );
+
+      let data:
+        ExecutorResponse;
+
+      try {
+
+        data =
+          await response.json();
+
+      } catch {
+
+        throw new Error(
+          "The executor returned an invalid response."
+        );
+      }
+
+      /*
+       * HTTP 422 is expected for:
+       *
+       * WRONG_ANSWER
+       * TIME_LIMIT_EXCEEDED
+       * RUNTIME_ERROR
+       * etc.
+       *
+       * Therefore we don't treat a non-2xx response
+       * by itself as a network error.
+       */
+      if (
+        !response.ok &&
+        response.status !== 422
+      ) {
+
+        throw new Error(
+          data.error ||
+          "The execution request failed."
+        );
+      }
+
+      setResult(data);
+
+    } catch (requestError) {
+
+      console.error(
+        "Executor request failed:",
+        requestError
+      );
+
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Could not connect to the execution engine."
+      );
+
+    } finally {
+
       setRunning(false);
-    }, 600);
+
+      setSubmitting(false);
+    }
   };
 
-  const handleSubmit = () => {
-    setSubmitted(true);
-  };
+  /* =======================================================
+     STATUS HELPERS
+     ======================================================= */
+
+  const status =
+    result?.status;
+
+  const isAccepted =
+    status ===
+    "ACCEPTED";
+
+  const isWrongAnswer =
+    status ===
+    "WRONG_ANSWER";
+
+  const isTLE =
+    status ===
+    "TIME_LIMIT_EXCEEDED";
+
+  const isRuntimeError =
+    status ===
+    "RUNTIME_ERROR";
+
+  const isCompileError =
+    status ===
+    "COMPILATION_ERROR";
+
+  const isOutputLimit =
+    status ===
+    "OUTPUT_LIMIT_EXCEEDED";
+
+  const isSystemError =
+    status ===
+      "SYSTEM_ERROR" ||
+    Boolean(error);
+
+  /* =======================================================
+     STATUS UI
+     ======================================================= */
+
+  const renderVerdict =
+    () => {
+
+      if (error) {
+
+        return (
+          <VerdictCard
+            variant="error"
+            icon={
+              <AlertTriangle
+                size={18}
+              />
+            }
+            title="Execution failed"
+            description={error}
+          />
+        );
+      }
+
+      if (!result) {
+        return null;
+      }
+
+      if (isAccepted) {
+
+        return (
+          <VerdictCard
+            variant="success"
+            icon={
+              <CheckCircle2
+                size={18}
+              />
+            }
+            title="Accepted"
+            description={
+              result.testResults
+                ? `${result.testResults.length} test case${
+                    result.testResults.length ===
+                    1
+                      ? ""
+                      : "s"
+                  } passed successfully.`
+                : "Your code executed successfully."
+            }
+            runtime={
+              result.executionTimeMs
+            }
+          />
+        );
+      }
+
+      if (isWrongAnswer) {
+
+        return (
+          <VerdictCard
+            variant="error"
+            icon={
+              <XCircle
+                size={18}
+              />
+            }
+            title="Wrong Answer"
+            description={
+              result.failedTest
+                ? `Your solution failed on test case ${result.failedTest}.`
+                : "The output did not match the expected output."
+            }
+            runtime={
+              result.executionTimeMs
+            }
+          />
+        );
+      }
+
+      if (isTLE) {
+
+        return (
+          <VerdictCard
+            variant="warning"
+            icon={
+              <Clock3
+                size={18}
+              />
+            }
+            title="Time Limit Exceeded"
+            description={
+              result.failedTest
+                ? `Execution exceeded the time limit on test case ${result.failedTest}.`
+                : "Your program took too long to execute."
+            }
+            runtime={
+              result.executionTimeMs
+            }
+          />
+        );
+      }
+
+      if (isCompileError) {
+
+        return (
+          <VerdictCard
+            variant="error"
+            icon={
+              <XCircle
+                size={18}
+              />
+            }
+            title="Compilation Error"
+            description={
+              result.stderr ||
+              "Your code could not be compiled."
+            }
+          />
+        );
+      }
+
+      if (isRuntimeError) {
+
+        return (
+          <VerdictCard
+            variant="error"
+            icon={
+              <AlertTriangle
+                size={18}
+              />
+            }
+            title="Runtime Error"
+            description={
+              result.stderr ||
+              "Your program terminated unexpectedly."
+            }
+            runtime={
+              result.executionTimeMs
+            }
+          />
+        );
+      }
+
+      if (isOutputLimit) {
+
+        return (
+          <VerdictCard
+            variant="warning"
+            icon={
+              <AlertTriangle
+                size={18}
+              />
+            }
+            title="Output Limit Exceeded"
+            description="Your program produced too much output."
+            runtime={
+              result.executionTimeMs
+            }
+          />
+        );
+      }
+
+      if (isSystemError) {
+
+        return (
+          <VerdictCard
+            variant="error"
+            icon={
+              <AlertTriangle
+                size={18}
+              />
+            }
+            title="Execution Error"
+            description={
+              result.error ||
+              "Something went wrong while executing your code."
+            }
+          />
+        );
+      }
+
+      return null;
+    };
+
+  /* =======================================================
+     RENDER
+     ======================================================= */
 
   return (
     <section className="mt-14">
@@ -59,6 +467,7 @@ export default function CodingWorkspace({
         <div>
 
           <div className="flex items-center gap-2">
+
             <div
               className="
                 flex
@@ -71,19 +480,47 @@ export default function CodingWorkspace({
                 text-purple-700
               "
             >
-              <Code2 size={17} strokeWidth={2} />
+              <Code2
+                size={17}
+                strokeWidth={2}
+              />
             </div>
 
-            <p className="text-xs font-bold uppercase tracking-[0.14em] text-purple-700">
+            <p
+              className="
+                text-xs
+                font-bold
+                uppercase
+                tracking-[0.14em]
+                text-purple-700
+              "
+            >
               YOUR SOLUTION
             </p>
+
           </div>
 
-          <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-gray-950">
+          <h2
+            className="
+              mt-3
+              text-2xl
+              font-extrabold
+              tracking-tight
+              text-gray-950
+            "
+          >
             Try it yourself
           </h2>
 
-          <p className="mt-2 max-w-xl text-sm leading-6 text-gray-500">
+          <p
+            className="
+              mt-2
+              max-w-xl
+              text-sm
+              leading-6
+              text-gray-500
+            "
+          >
             Don't look at the solution yet. Write your approach,
             test your thinking, and submit when you're ready.
           </p>
@@ -95,6 +532,10 @@ export default function CodingWorkspace({
         <button
           type="button"
           onClick={resetCode}
+          disabled={
+            running ||
+            submitting
+          }
           className="
             inline-flex
             w-fit
@@ -114,15 +555,18 @@ export default function CodingWorkspace({
             hover:border-gray-300
             hover:bg-gray-50
             hover:text-gray-900
+            disabled:cursor-not-allowed
+            disabled:opacity-50
           "
         >
-          <RotateCcw size={14} />
+          <RotateCcw
+            size={14}
+          />
 
           Reset
         </button>
 
       </div>
-
 
       {/* =====================================================
           EDITOR
@@ -161,24 +605,68 @@ export default function CodingWorkspace({
 
             {/* Window controls */}
 
-            <div className="flex items-center gap-1.5">
+            <div
+              className="
+                flex
+                items-center
+                gap-1.5
+              "
+            >
 
-              <span className="h-2.5 w-2.5 rounded-full bg-[#ef4444]" />
+              <span
+                className="
+                  h-2.5
+                  w-2.5
+                  rounded-full
+                  bg-[#ef4444]
+                "
+              />
 
-              <span className="h-2.5 w-2.5 rounded-full bg-[#f59e0b]" />
+              <span
+                className="
+                  h-2.5
+                  w-2.5
+                  rounded-full
+                  bg-[#f59e0b]
+                "
+              />
 
-              <span className="h-2.5 w-2.5 rounded-full bg-[#22c55e]" />
+              <span
+                className="
+                  h-2.5
+                  w-2.5
+                  rounded-full
+                  bg-[#22c55e]
+                "
+              />
 
             </div>
 
-            <div className="h-4 w-px bg-gray-700" />
+            <div
+              className="
+                h-4
+                w-px
+                bg-gray-700
+              "
+            />
 
-            <span className="text-xs font-medium text-gray-400">
-              solution.{language.toLowerCase() === "cpp" ? "cpp" : "txt"}
+            <span
+              className="
+                text-xs
+                font-medium
+                text-gray-400
+              "
+            >
+              solution.
+              {
+                language.toLowerCase() ===
+                "cpp"
+                  ? "cpp"
+                  : "txt"
+              }
             </span>
 
           </div>
-
 
           {/* Language */}
 
@@ -202,14 +690,16 @@ export default function CodingWorkspace({
 
         </div>
 
-
         {/* ===================================================
             CODE AREA
         =================================================== */}
 
-        <div className="relative bg-[#0b0f19]">
-
-          {/* Editor label */}
+        <div
+          className="
+            relative
+            bg-[#0b0f19]
+          "
+        >
 
           <div
             className="
@@ -229,16 +719,30 @@ export default function CodingWorkspace({
               sm:flex
             "
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-gray-700" />
-            Editing
-          </div>
 
+            <span
+              className="
+                h-1.5
+                w-1.5
+                rounded-full
+                bg-gray-700
+              "
+            />
+
+            Editing
+
+          </div>
 
           <textarea
             value={code}
             onChange={(event) => {
-              setCode(event.target.value);
-              setSubmitted(false);
+              setCode(
+                event.target.value
+              );
+
+              setResult(null);
+
+              setError(null);
             }}
             spellCheck={false}
             autoCorrect="off"
@@ -266,7 +770,6 @@ export default function CodingWorkspace({
 
         </div>
 
-
         {/* ===================================================
             EDITOR FOOTER
         =================================================== */}
@@ -288,28 +791,57 @@ export default function CodingWorkspace({
           "
         >
 
-          <div className="flex items-center gap-2">
+          {/* Status */}
+
+          <div
+            className="
+              flex
+              items-center
+              gap-2
+            "
+          >
 
             <Terminal
               size={14}
               className="text-gray-600"
             />
 
-            <p className="text-[11px] text-gray-500">
-              Evaluation engine coming soon
+            <p
+              className="
+                text-[11px]
+                text-gray-500
+              "
+            >
+              {running
+                ? "Running your code..."
+                : submitting
+                  ? "Evaluating your submission..."
+                  : "Ready to run"}
             </p>
 
           </div>
 
+          {/* Buttons */}
 
-          <div className="flex items-center gap-2">
+          <div
+            className="
+              flex
+              items-center
+              gap-2
+            "
+          >
 
             {/* Run */}
 
             <button
               type="button"
-              onClick={handleRun}
-              disabled={running}
+              onClick={() =>
+                execute("run")
+              }
+              disabled={
+                running ||
+                submitting
+              }
               className="
                 inline-flex
                 items-center
@@ -333,21 +865,34 @@ export default function CodingWorkspace({
               "
             >
 
-              <Play
-                size={14}
-                className={running ? "animate-pulse" : ""}
-              />
+              {running ? (
+                <Loader2
+                  size={14}
+                  className="animate-spin"
+                />
+              ) : (
+                <Play
+                  size={14}
+                />
+              )}
 
-              {running ? "Running..." : "Run"}
+              {running
+                ? "Running..."
+                : "Run"}
 
             </button>
-
 
             {/* Submit */}
 
             <button
               type="button"
-              onClick={handleSubmit}
+              onClick={() =>
+                execute("submit")
+              }
+              disabled={
+                running ||
+                submitting
+              }
               className="
                 inline-flex
                 items-center
@@ -365,12 +910,25 @@ export default function CodingWorkspace({
                 transition-all
                 hover:bg-purple-500
                 hover:shadow-md
+                disabled:cursor-not-allowed
+                disabled:opacity-60
               "
             >
 
-              <Send size={14} />
+              {submitting ? (
+                <Loader2
+                  size={14}
+                  className="animate-spin"
+                />
+              ) : (
+                <Send
+                  size={14}
+                />
+              )}
 
-              Submit
+              {submitting
+                ? "Submitting..."
+                : "Submit"}
 
             </button>
 
@@ -380,63 +938,11 @@ export default function CodingWorkspace({
 
       </div>
 
-
       {/* =====================================================
-          SUBMISSION STATE
+          VERDICT
       ===================================================== */}
 
-      {submitted && (
-        <div
-          className="
-            mt-4
-            overflow-hidden
-            rounded-2xl
-            border
-            border-purple-200
-            bg-purple-50
-          "
-        >
-
-          <div className="flex items-start gap-4 p-5">
-
-            <div
-              className="
-                flex
-                h-9
-                w-9
-                shrink-0
-                items-center
-                justify-center
-                rounded-full
-                bg-purple-100
-                text-purple-700
-              "
-            >
-              <CheckCircle2
-                size={18}
-                strokeWidth={2}
-              />
-            </div>
-
-            <div>
-
-              <p className="text-sm font-bold text-purple-950">
-                Submission received
-              </p>
-
-              <p className="mt-1 text-sm leading-6 text-purple-700">
-                Your code has been submitted. Once the evaluation
-                engine is connected, you'll receive the actual
-                verdict and test-case results here.
-              </p>
-
-            </div>
-
-          </div>
-
-        </div>
-      )}
-
+      {renderVerdict()}
 
       {/* =====================================================
           TEST CASES
@@ -447,137 +953,196 @@ export default function CodingWorkspace({
 
           <div className="mb-4">
 
-            <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-400">
+            <p
+              className="
+                text-xs
+                font-bold
+                uppercase
+                tracking-[0.12em]
+                text-gray-400
+              "
+            >
               TEST CASES
             </p>
 
-            <h3 className="mt-1 text-xl font-extrabold tracking-tight text-gray-950">
+            <h3
+              className="
+                mt-1
+                text-xl
+                font-extrabold
+                tracking-tight
+                text-gray-950
+              "
+            >
               Check your thinking
             </h3>
 
           </div>
 
+          <div
+            className="
+              grid
+              gap-4
+              md:grid-cols-2
+            "
+          >
 
-          <div className="grid gap-4 md:grid-cols-2">
-
-            {examples.map((example, index) => (
-              <div
-                key={index}
-                className="
-                  overflow-hidden
-                  rounded-2xl
-                  border
-                  border-gray-200
-                  bg-white
-                  transition-all
-                  duration-200
-                  hover:border-gray-300
-                  hover:shadow-sm
-                "
-              >
-
-                {/* Test case header */}
+            {examples.map(
+              (
+                example,
+                index
+              ) => (
 
                 <div
+                  key={index}
                   className="
-                    flex
-                    items-center
-                    justify-between
-                    border-b
-                    border-gray-100
-                    bg-gray-50/80
-                    px-4
-                    py-3
+                    overflow-hidden
+                    rounded-2xl
+                    border
+                    border-gray-200
+                    bg-white
+                    transition-all
+                    duration-200
+                    hover:border-gray-300
+                    hover:shadow-sm
                   "
                 >
 
-                  <span className="text-xs font-bold text-gray-700">
-                    Example {index + 1}
-                  </span>
+                  {/* Header */}
 
-                  <span
+                  <div
                     className="
-                      rounded-md
-                      bg-white
-                      px-2
-                      py-1
-                      text-[10px]
-                      font-semibold
-                      uppercase
-                      tracking-wider
-                      text-gray-400
-                      shadow-sm
+                      flex
+                      items-center
+                      justify-between
+                      border-b
+                      border-gray-100
+                      bg-gray-50/80
+                      px-4
+                      py-3
                     "
                   >
-                    Test Case
-                  </span>
 
-                </div>
-
-
-                {/* Input / Output */}
-
-                <div className="grid divide-y divide-gray-100 md:grid-cols-2 md:divide-x md:divide-y-0">
-
-                  {/* Input */}
-
-                  <div className="p-4">
-
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">
-                      Input
-                    </p>
-
-                    <pre
+                    <span
                       className="
-                        overflow-x-auto
-                        rounded-xl
-                        border
-                        border-gray-800
-                        bg-[#0b0f19]
-                        p-3.5
-                        font-mono
                         text-xs
-                        leading-6
-                        text-gray-200
+                        font-bold
+                        text-gray-700
                       "
                     >
-                      {example.input}
-                    </pre>
+                      Example {index + 1}
+                    </span>
+
+                    <span
+                      className="
+                        rounded-md
+                        bg-white
+                        px-2
+                        py-1
+                        text-[10px]
+                        font-semibold
+                        uppercase
+                        tracking-wider
+                        text-gray-400
+                        shadow-sm
+                      "
+                    >
+                      Test Case
+                    </span>
 
                   </div>
 
+                  {/* Input / Output */}
 
-                  {/* Output */}
+                  <div
+                    className="
+                      grid
+                      divide-y
+                      divide-gray-100
+                      md:grid-cols-2
+                      md:divide-x
+                      md:divide-y-0
+                    "
+                  >
 
-                  <div className="p-4">
+                    {/* Input */}
 
-                    <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.12em] text-gray-400">
-                      Expected Output
-                    </p>
+                    <div className="p-4">
 
-                    <pre
-                      className="
-                        overflow-x-auto
-                        rounded-xl
-                        border
-                        border-gray-800
-                        bg-[#0b0f19]
-                        p-3.5
-                        font-mono
-                        text-xs
-                        leading-6
-                        text-gray-200
-                      "
-                    >
-                      {example.output}
-                    </pre>
+                      <p
+                        className="
+                          mb-2
+                          text-[10px]
+                          font-bold
+                          uppercase
+                          tracking-[0.12em]
+                          text-gray-400
+                        "
+                      >
+                        Input
+                      </p>
+
+                      <pre
+                        className="
+                          overflow-x-auto
+                          rounded-xl
+                          border
+                          border-gray-800
+                          bg-[#0b0f19]
+                          p-3.5
+                          font-mono
+                          text-xs
+                          leading-6
+                          text-gray-200
+                        "
+                      >
+                        {example.input}
+                      </pre>
+
+                    </div>
+
+                    {/* Output */}
+
+                    <div className="p-4">
+
+                      <p
+                        className="
+                          mb-2
+                          text-[10px]
+                          font-bold
+                          uppercase
+                          tracking-[0.12em]
+                          text-gray-400
+                        "
+                      >
+                        Expected Output
+                      </p>
+
+                      <pre
+                        className="
+                          overflow-x-auto
+                          rounded-xl
+                          border
+                          border-gray-800
+                          bg-[#0b0f19]
+                          p-3.5
+                          font-mono
+                          text-xs
+                          leading-6
+                          text-gray-200
+                        "
+                      >
+                        {example.output}
+                      </pre>
+
+                    </div>
 
                   </div>
 
                 </div>
 
-              </div>
-            ))}
+              )
+            )}
 
           </div>
 
@@ -585,5 +1150,163 @@ export default function CodingWorkspace({
       )}
 
     </section>
+  );
+}
+
+/* =========================================================
+   VERDICT CARD
+   ========================================================= */
+
+function VerdictCard({
+  variant,
+  icon,
+  title,
+  description,
+  runtime,
+}: {
+  variant:
+    | "success"
+    | "error"
+    | "warning";
+
+  icon: React.ReactNode;
+
+  title: string;
+
+  description: string;
+
+  runtime?: number;
+}) {
+
+  const styles = {
+
+    success: {
+      wrapper:
+        "border-purple-200 bg-purple-50",
+      icon:
+        "bg-purple-100 text-purple-700",
+      title:
+        "text-purple-950",
+      description:
+        "text-purple-700",
+    },
+
+    error: {
+      wrapper:
+        "border-red-200 bg-red-50",
+      icon:
+        "bg-red-100 text-red-700",
+      title:
+        "text-red-950",
+      description:
+        "text-red-700",
+    },
+
+    warning: {
+      wrapper:
+        "border-amber-200 bg-amber-50",
+      icon:
+        "bg-amber-100 text-amber-700",
+      title:
+        "text-amber-950",
+      description:
+        "text-amber-700",
+    },
+
+  }[variant];
+
+  return (
+    <div
+      className={`
+        mt-4
+        overflow-hidden
+        rounded-2xl
+        border
+        ${styles.wrapper}
+      `}
+    >
+
+      <div
+        className="
+          flex
+          items-start
+          justify-between
+          gap-4
+          p-5
+        "
+      >
+
+        <div
+          className="
+            flex
+            items-start
+            gap-4
+          "
+        >
+
+          <div
+            className={`
+              flex
+              h-9
+              w-9
+              shrink-0
+              items-center
+              justify-center
+              rounded-full
+              ${styles.icon}
+            `}
+          >
+            {icon}
+          </div>
+
+          <div>
+
+            <p
+              className={`
+                text-sm
+                font-bold
+                ${styles.title}
+              `}
+            >
+              {title}
+            </p>
+
+            <p
+              className={`
+                mt-1
+                text-sm
+                leading-6
+                ${styles.description}
+              `}
+            >
+              {description}
+            </p>
+
+          </div>
+
+        </div>
+
+        {typeof runtime ===
+          "number" && (
+          <div
+            className="
+              shrink-0
+              rounded-full
+              bg-white/70
+              px-3
+              py-1.5
+              text-xs
+              font-bold
+              text-gray-600
+            "
+          >
+            {runtime.toFixed(0)}
+            ms
+          </div>
+        )}
+
+      </div>
+
+    </div>
   );
 }

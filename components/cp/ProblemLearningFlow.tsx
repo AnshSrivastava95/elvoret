@@ -11,6 +11,7 @@ interface Example {
 }
 
 interface ProblemLearningFlowProps {
+  slug: string;
   contentHtml: string;
   solutionHtml: string;
 
@@ -23,6 +24,7 @@ interface ProblemLearningFlowProps {
 }
 
 export default function ProblemLearningFlow({
+  slug,
   contentHtml,
   solutionHtml,
   hints,
@@ -111,9 +113,10 @@ export default function ProblemLearningFlow({
       {/* ================================================= */}
 
       <CodingWorkspace
-        language={language}
-        starterCode={starterCode}
-        examples={examples}
+      slug={slug}
+      language={language}
+      starterCode={starterCode}
+      examples={examples}
       />
 
       {/* ================================================= */}

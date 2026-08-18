@@ -18,30 +18,58 @@ export interface CPComplexity {
   space?: string;
 }
 
-/*
- * Every MDX file represents an individual problem.
- *
- * The same problem can optionally belong to:
- *
- * 1. A DSA pattern
- * 2. A problem set
- * 3. A contest/preparation collection
- *
- * This means we do NOT need separate MDX files
- * for patterns or collections.
- */
+export interface CPNumberRange {
+  min: number;
+  max: number;
+}
+
+export interface CPArrayGenerator {
+  type: "array";
+  count: number;
+  seed?: number;
+
+  length: CPNumberRange;
+
+  values: CPNumberRange;
+
+  includeEdgeCases?: boolean;
+  includeSorted?: boolean;
+  includeReverseSorted?: boolean;
+  includeDuplicates?: boolean;
+}
+
+export interface CPStringGenerator {
+  type: "string";
+  count: number;
+  seed?: number;
+
+  length: CPNumberRange;
+
+  alphabet?: string;
+
+  includeEdgeCases?: boolean;
+}
+
+export interface CPMatrixGenerator {
+  type: "matrix";
+  count: number;
+  seed?: number;
+
+  rows: CPNumberRange;
+
+  columns: CPNumberRange;
+
+  values: CPNumberRange;
+
+  includeEdgeCases?: boolean;
+}
+
+export type CPGenerator =
+  | CPArrayGenerator
+  | CPStringGenerator
+  | CPMatrixGenerator;
+
 export interface CPProblem {
-  /*
-   * Automatically generated from filename.
-   *
-   * Example:
-   *
-   * two-sum.mdx
-   *
-   * becomes:
-   *
-   * slug: "two-sum"
-   */
   slug: string;
 
   title: string;
@@ -54,54 +82,31 @@ export interface CPProblem {
 
   sourceId?: string | number;
 
-  /*
-   * General topics.
-   *
-   * Example:
-   *
-   * ["Arrays", "Hashing"]
-   */
   topics: string[];
 
-  /*
-   * Main DSA pattern.
-   *
-   * Examples:
-   *
-   * Two Pointers
-   * Sliding Window
-   * Binary Search
-   * Prefix Sum
-   * Dynamic Programming
-   */
   pattern?: string;
 
-  /*
-   * Problem collection.
-   *
-   * Examples:
-   *
-   * Codeforces
-   * CodeChef
-   * AtCoder
-   * LeetCode
-   * Interview Problems
-   */
   problemSet?: string;
 
-  /*
-   * Contest / speed-training collection.
-   *
-   * Examples:
-   *
-   * Fast Solving
-   * Codeforces Div 3 Practice
-   * Beginner Contest Simulation
-   * Previous Codeforces Round
-   */
   contest?: string;
 
   complexity?: CPComplexity;
+
+  /*
+   * Problem time limit in seconds.
+   *
+   * Example:
+   *
+   * timeLimit: 2
+   *
+   * means 2 seconds.
+   */
+  timeLimit?: number;
+
+  /*
+   * Automatic hidden-test generator.
+   */
+  generator?: CPGenerator;
 
   examples: CPExample[];
 
@@ -133,23 +138,6 @@ const SOLUTION_END =
 /* =========================================================
    GET ALL PROBLEMS
    ========================================================= */
-
-/*
- * Automatically discovers every .mdx file
- * inside:
- *
- * content/cp/
- *
- * This means:
- *
- * Add MDX file
- *      ↓
- * Automatically discovered
- *      ↓
- * Automatically appears on /cp
- *
- * No hardcoded problem list required.
- */
 
 export async function getAllCPProblems(): Promise<
   CPProblem[]
@@ -231,12 +219,6 @@ export async function getCPProblem(
       content,
     } = matter(raw);
 
-    /*
-     * Only process the public part.
-     *
-     * Anything after SOLUTION_START
-     * stays hidden from the main problem HTML.
-     */
     const publicContent =
       getPublicContent(
         content
@@ -315,25 +297,34 @@ export async function getCPProblem(
         data.complexity
           ? {
               time:
-                data.complexity
-                  .time
+                data.complexity.time
                   ? String(
-                      data
-                        .complexity
-                        .time
+                      data.complexity.time
                     )
                   : undefined,
 
               space:
-                data.complexity
-                  .space
+                data.complexity.space
                   ? String(
-                      data
-                        .complexity
-                        .space
+                      data.complexity.space
                     )
                   : undefined,
             }
+          : undefined,
+
+      timeLimit:
+        data.timeLimit !==
+        undefined
+          ? Number(
+              data.timeLimit
+            )
+          : undefined,
+
+      generator:
+        isValidGenerator(
+          data.generator
+        )
+          ? data.generator
           : undefined,
 
       examples:
@@ -393,7 +384,91 @@ export async function getCPProblem(
 }
 
 /* =========================================================
-   GET SOLUTION
+   GET RAW REFERENCE CODE
+   ========================================================= */
+
+/**
+ * Reads the SOLUTION_START / SOLUTION_END section
+ * and extracts the first fenced C++ code block.
+ *
+ * This function runs server-side only.
+ *
+ * The reference solution is NEVER sent to the browser.
+ */
+export async function getCPReferenceCode(
+  slug: string
+): Promise<string | null> {
+  try {
+    const filePath =
+      path.join(
+        CP_DIRECTORY,
+        `${slug}.mdx`
+      );
+
+    const raw =
+      await fs.readFile(
+        filePath,
+        "utf8"
+      );
+
+    const {
+      content,
+    } = matter(raw);
+
+    const solutionContent =
+      getSolutionContent(
+        content
+      );
+
+    if (
+      !solutionContent
+    ) {
+      return null;
+    }
+
+    /*
+     * Prefer a C++ fenced block.
+     *
+     * Supports:
+     *
+     * ```cpp
+     * ```
+     *
+     * ```c++
+     * ```
+     *
+     * ```cc
+     * ```
+     */
+    const cppMatch =
+      solutionContent.match(
+        /```(?:cpp|c\+\+|cc|c)?\s*\n([\s\S]*?)```/i
+      );
+
+    if (
+      cppMatch
+    ) {
+      return cppMatch[1].trim();
+    }
+
+    /*
+     * If the solution section itself contains
+     * raw code without Markdown fences, use it.
+     */
+    return solutionContent.trim();
+
+  } catch (error) {
+    console.error(
+      `Failed to load CP reference solution: ${slug}`,
+      error
+    );
+
+    return null;
+  }
+}
+
+/* =========================================================
+   GET SOLUTION HTML
    ========================================================= */
 
 export async function getCPSolution(
@@ -421,7 +496,9 @@ export async function getCPSolution(
         content
       );
 
-    if (!solutionContent) {
+    if (
+      !solutionContent
+    ) {
       return null;
     }
 
@@ -439,6 +516,41 @@ export async function getCPSolution(
 }
 
 /* =========================================================
+   VALIDATE GENERATOR
+   ========================================================= */
+
+function isValidGenerator(
+  value: unknown
+): value is CPGenerator {
+  if (
+    !value ||
+    typeof value !==
+      "object"
+  ) {
+    return false;
+  }
+
+  const generator =
+    value as Record<
+      string,
+      unknown
+    >;
+
+  if (
+    generator.type !==
+      "array" &&
+    generator.type !==
+      "string" &&
+    generator.type !==
+      "matrix"
+  ) {
+    return false;
+  }
+
+  return true;
+}
+
+/* =========================================================
    PUBLIC CONTENT
    ========================================================= */
 
@@ -450,11 +562,9 @@ function getPublicContent(
       SOLUTION_START
     );
 
-  /*
-   * No solution section means
-   * entire MDX body is public.
-   */
-  if (start === -1) {
+  if (
+    start === -1
+  ) {
     return content.trim();
   }
 
@@ -478,7 +588,9 @@ function getSolutionContent(
       SOLUTION_START
     );
 
-  if (start === -1) {
+  if (
+    start === -1
+  ) {
     return "";
   }
 
@@ -515,7 +627,9 @@ async function markdownToHtml(
   const result =
     await remark()
       .use(html)
-      .process(markdown);
+      .process(
+        markdown
+      );
 
   return result.toString();
 }
