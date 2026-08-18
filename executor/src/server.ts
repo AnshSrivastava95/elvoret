@@ -1,52 +1,193 @@
-import express from "express";
+import express, {
+  type Request,
+  type Response,
+} from "express";
 
-const app = express();
+import {
+  executeCpp,
+} from "./runner.js";
 
-app.use(express.json());
+const app =
+  express();
+
+app.use(
+  express.json({
+    limit: "256kb",
+  })
+);
 
 const PORT =
-  Number(process.env.PORT) || 10000;
+  Number(
+    process.env.PORT
+  ) || 10000;
 
 const EXECUTOR_SECRET =
   process.env.EXECUTOR_SECRET;
 
-app.get("/health", (_req, res) => {
-  res.status(200).json({
-    ok: true,
-    service: "elvoret-executor",
-    version: "1.0.0",
-  });
-});
+/* =========================================================
+   HEALTH
+   ========================================================= */
 
-app.post("/execute", (req, res) => {
-  const authorization =
-    req.headers.authorization;
+app.get(
+  "/health",
+  (
+    _req: Request,
+    res: Response
+  ) => {
 
-  if (
-    !EXECUTOR_SECRET ||
-    authorization !==
-      `Bearer ${EXECUTOR_SECRET}`
-  ) {
-    return res.status(401).json({
-      error: "Unauthorized",
+    res.status(200).json({
+      ok: true,
+
+      service:
+        "elvoret-executor",
+
+      version:
+        "1.0.0",
     });
   }
+);
 
-  return res.status(200).json({
-    ok: true,
-    message:
-      "Executor connection successful.",
-    received: {
-      language:
-        req.body?.language ?? null,
-      hasCode:
-        typeof req.body?.code === "string",
-    },
-  });
-});
+/* =========================================================
+   EXECUTE
+   ========================================================= */
 
-app.listen(PORT, "0.0.0.0", () => {
-  console.log(
-    `Elvoret executor listening on port ${PORT}`
-  );
-});
+app.post(
+  "/execute",
+  async (
+    req: Request,
+    res: Response
+  ) => {
+
+    /*
+     * -----------------------------------------------
+     * AUTHENTICATION
+     * -----------------------------------------------
+     */
+
+    const authorization =
+      req.headers.authorization;
+
+    if (
+      !EXECUTOR_SECRET ||
+      authorization !==
+        `Bearer ${EXECUTOR_SECRET}`
+    ) {
+
+      return res.status(401).json({
+        ok: false,
+        error: "Unauthorized",
+      });
+    }
+
+    /*
+     * -----------------------------------------------
+     * LANGUAGE
+     * -----------------------------------------------
+     */
+
+    if (
+      req.body?.language !==
+      "cpp"
+    ) {
+
+      return res.status(400).json({
+        ok: false,
+
+        error:
+          "Only C++ execution is currently supported.",
+      });
+    }
+
+    /*
+     * -----------------------------------------------
+     * CODE
+     * -----------------------------------------------
+     */
+
+    if (
+      typeof req.body?.code !==
+      "string"
+    ) {
+
+      return res.status(400).json({
+        ok: false,
+
+        error:
+          "Code must be a string.",
+      });
+    }
+
+    /*
+     * -----------------------------------------------
+     * EXECUTION
+     * -----------------------------------------------
+     */
+
+    try {
+
+      const result =
+        await executeCpp({
+          language:
+            "cpp",
+
+          code:
+            req.body.code,
+
+          input:
+            typeof req.body.input ===
+            "string"
+              ? req.body.input
+              : "",
+
+          timeLimitMs:
+            req.body.timeLimitMs,
+
+          memoryLimitMb:
+            req.body.memoryLimitMb,
+        });
+
+      return res.status(
+        result.ok
+          ? 200
+          : 422
+      ).json(
+        result
+      );
+
+    } catch (error) {
+
+      console.error(
+        "Unexpected execution error:",
+        error
+      );
+
+      return res.status(
+        500
+      ).json({
+        ok: false,
+
+        status:
+          "SYSTEM_ERROR",
+
+        error:
+          "Execution engine failure.",
+      });
+    }
+  }
+);
+
+/* =========================================================
+   START
+   ========================================================= */
+
+app.listen(
+  PORT,
+  "0.0.0.0",
+  () => {
+
+    console.log(
+      `Elvoret executor listening on port ${PORT}`
+    );
+
+  }
+);
