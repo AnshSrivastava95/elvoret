@@ -73,9 +73,7 @@ app.post(
 
       return res.status(401).json({
         ok: false,
-
-        error:
-          "Unauthorized",
+        error: "Unauthorized",
       });
     }
 
@@ -114,8 +112,24 @@ app.post(
     }
 
     /* =====================================================
-       EXECUTE
+       TEST ARRAY VALIDATION
        ===================================================== */
+
+    if (
+      req.body?.tests !==
+      undefined &&
+      !Array.isArray(
+        req.body.tests
+      )
+    ) {
+
+      return res.status(400).json({
+        ok: false,
+
+        error:
+          "tests must be an array.",
+      });
+    }
 
     try {
 
@@ -127,18 +141,23 @@ app.post(
           code:
             req.body.code,
 
+          tests:
+            Array.isArray(
+              req.body.tests
+            )
+              ? req.body.tests
+              : undefined,
+
+          /*
+           * Backward compatibility with
+           * our old single-test API.
+           */
           input:
             typeof req.body.input ===
             "string"
               ? req.body.input
-              : "",
+              : undefined,
 
-          /*
-           * IMPORTANT:
-           *
-           * Forward expectedOutput exactly as
-           * received from Vercel.
-           */
           expectedOutput:
             typeof req.body.expectedOutput ===
             "string"
@@ -152,16 +171,6 @@ app.post(
             req.body.memoryLimitMb,
         });
 
-      /*
-       * Successful execution:
-       * HTTP 200
-       *
-       * Wrong answer / TLE / runtime error:
-       * HTTP 422
-       *
-       * This lets the frontend distinguish
-       * infrastructure failure from a verdict.
-       */
       return res
         .status(
           result.ok
@@ -202,5 +211,6 @@ app.listen(
     console.log(
       `Elvoret executor listening on port ${PORT}`
     );
+
   }
 );

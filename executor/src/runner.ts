@@ -9,6 +9,8 @@ import {
 import type {
   ExecuteRequest,
   ExecuteResponse,
+  ExecuteTestCase,
+  TestCaseResult,
 } from "./types";
 
 /* =========================================================
@@ -27,6 +29,9 @@ const MAX_INPUT_SIZE =
 const MAX_OUTPUT_SIZE =
   1_000_000;
 
+const MAX_TEST_CASES =
+  100;
+
 const DEFAULT_TIME_LIMIT_MS =
   2_000;
 
@@ -34,12 +39,7 @@ const MAX_TIME_LIMIT_MS =
   10_000;
 
 /*
- * Small infrastructure buffer.
- *
- * Example:
- *
- * Problem limit = 2000 ms
- * Executor timeout = 2500 ms
+ * Small infrastructure/startup allowance.
  */
 const EXECUTION_BUFFER_MS =
   500;
@@ -86,7 +86,10 @@ function clamp(
   max: number
 ): number {
   return Math.min(
-    Math.max(value, min),
+    Math.max(
+      value,
+      min
+    ),
     max
   );
 }
@@ -104,19 +107,6 @@ async function ensureWorkRoot(): Promise<void> {
    OUTPUT NORMALIZATION
    ========================================================= */
 
-/*
- * Competitive programming output comparison:
- *
- * "12"
- * " 12 "
- * "12\n"
- * "12    "
- *
- * are treated as equivalent.
- *
- * Multiple whitespace characters are treated
- * as a single separator.
- */
 function normalizeOutput(
   output: string
 ): string {
@@ -137,6 +127,67 @@ function outputsMatch(
 }
 
 /* =========================================================
+   TEST CASE NORMALIZATION
+   ========================================================= */
+
+function getTestCases(
+  request: ExecuteRequest
+): ExecuteTestCase[] {
+
+  /*
+   * Preferred API:
+   *
+   * tests: [...]
+   */
+  if (
+    Array.isArray(
+      request.tests
+    )
+  ) {
+
+    return request.tests
+      .slice(
+        0,
+        MAX_TEST_CASES
+      )
+      .map(
+        (test) => ({
+          input:
+            typeof test.input ===
+            "string"
+              ? test.input
+              : "",
+
+          expectedOutput:
+            typeof test.expectedOutput ===
+            "string"
+              ? test.expectedOutput
+              : "",
+        })
+      );
+  }
+
+  /*
+   * Backward-compatible single test.
+   */
+  return [
+    {
+      input:
+        typeof request.input ===
+        "string"
+          ? request.input
+          : "",
+
+      expectedOutput:
+        typeof request.expectedOutput ===
+        "string"
+          ? request.expectedOutput
+          : "",
+    },
+  ];
+}
+
+/* =========================================================
    EXECUTE C++
    ========================================================= */
 
@@ -154,6 +205,7 @@ export async function executeCpp(
     typeof request.code !==
     "string"
   ) {
+
     return {
       ok: false,
       status: "SYSTEM_ERROR",
@@ -170,6 +222,7 @@ export async function executeCpp(
     request.code.length >
     MAX_CODE_SIZE
   ) {
+
     return {
       ok: false,
       status: "SYSTEM_ERROR",
@@ -183,19 +236,18 @@ export async function executeCpp(
   }
 
   /* =======================================================
-     VALIDATE INPUT
+     TEST CASES
      ======================================================= */
 
-  const input =
-    typeof request.input ===
-    "string"
-      ? request.input
-      : "";
+  const tests =
+    getTestCases(
+      request
+    );
 
   if (
-    input.length >
-    MAX_INPUT_SIZE
+    tests.length === 0
   ) {
+
     return {
       ok: false,
       status: "SYSTEM_ERROR",
@@ -204,8 +256,30 @@ export async function executeCpp(
       executionTimeMs: 0,
       exitCode: null,
       error:
-        "Input is too large.",
+        "At least one test case is required.",
     };
+  }
+
+  for (
+    const test of tests
+  ) {
+
+    if (
+      test.input.length >
+      MAX_INPUT_SIZE
+    ) {
+
+      return {
+        ok: false,
+        status: "SYSTEM_ERROR",
+        stdout: "",
+        stderr: "",
+        executionTimeMs: 0,
+        exitCode: null,
+        error:
+          "Test input is too large.",
+      };
+    }
   }
 
   /* =======================================================
@@ -227,8 +301,7 @@ export async function executeCpp(
     EXECUTION_BUFFER_MS;
 
   /*
-   * Memory is accepted by the API but not
-   * enforced yet.
+   * Reserved for proper memory isolation later.
    */
   const memoryLimitMb =
     request.memoryLimitMb;
@@ -284,12 +357,9 @@ export async function executeCpp(
     );
 
     /* =====================================================
-       COMPILE
+       COMPILE ONCE
        ===================================================== */
 
-    /*
-     * NO COMPILATION TIMEOUT.
-     */
     const compileResult =
       await runProcess(
         "g++",
@@ -305,6 +375,9 @@ export async function executeCpp(
           cwd:
             jobDirectory,
 
+          /*
+           * No compilation timeout.
+           */
           stdin: "",
 
           maxOutputBytes:
@@ -319,18 +392,26 @@ export async function executeCpp(
     if (
       compileResult.outputLimitExceeded
     ) {
+
       return {
         ok: false,
+
         status:
           "OUTPUT_LIMIT_EXCEEDED",
+
         stdout:
           compileResult.stdout,
+
         stderr:
           compileResult.stderr,
+
         executionTimeMs:
           compileResult.executionTimeMs,
+
         exitCode:
           compileResult.exitCode,
+
+        testResults: [],
       };
     }
 
@@ -342,176 +423,162 @@ export async function executeCpp(
       compileResult.exitCode !==
       0
     ) {
+
       return {
         ok: false,
+
         status:
           "COMPILATION_ERROR",
+
         stdout:
           compileResult.stdout,
+
         stderr:
           compileResult.stderr,
+
         executionTimeMs:
           compileResult.executionTimeMs,
+
         exitCode:
           compileResult.exitCode,
+
+        testResults: [],
       };
     }
 
     /* =====================================================
-       RUN PROGRAM
+       RUN TEST CASES
        ===================================================== */
 
-    const executionResult =
-      await runProcess(
-        executablePath,
-        [],
-        {
-          cwd:
-            jobDirectory,
+    const testResults:
+      TestCaseResult[] = [];
 
-          timeoutMs:
-            executionTimeoutMs,
+    let totalExecutionTimeMs =
+      0;
 
-          stdin:
-            input,
-
-          maxOutputBytes:
-            MAX_OUTPUT_SIZE,
-        }
-      );
-
-    /* =====================================================
-       TIME LIMIT
-       ===================================================== */
-
-    if (
-      executionResult.timedOut
-    ) {
-      return {
-        ok: false,
-        status:
-          "TIME_LIMIT_EXCEEDED",
-        stdout:
-          executionResult.stdout,
-        stderr:
-          executionResult.stderr,
-        executionTimeMs:
-          executionResult.executionTimeMs,
-        exitCode: null,
-      };
-    }
-
-    /* =====================================================
-       OUTPUT LIMIT
-       ===================================================== */
-
-    if (
-      executionResult.outputLimitExceeded
-    ) {
-      return {
-        ok: false,
-        status:
-          "OUTPUT_LIMIT_EXCEEDED",
-        stdout:
-          executionResult.stdout,
-        stderr:
-          executionResult.stderr,
-        executionTimeMs:
-          executionResult.executionTimeMs,
-        exitCode:
-          executionResult.exitCode,
-      };
-    }
-
-    /* =====================================================
-       RUNTIME ERROR
-       ===================================================== */
-
-    if (
-      executionResult.exitCode !==
-      0
-    ) {
-      return {
-        ok: false,
-        status:
-          "RUNTIME_ERROR",
-        stdout:
-          executionResult.stdout,
-        stderr:
-          executionResult.stderr,
-        executionTimeMs:
-          executionResult.executionTimeMs,
-        exitCode:
-          executionResult.exitCode,
-      };
-    }
-
-    /* =====================================================
-       OUTPUT JUDGING
-       ===================================================== */
-
-    /*
-     * IMPORTANT:
-     *
-     * If expectedOutput exists, we MUST compare it.
-     *
-     * We deliberately do not use truthiness here because
-     * an expected output such as "" is still a valid value.
-     */
-    if (
-      Object.prototype.hasOwnProperty.call(
-        request,
-        "expectedOutput"
-      )
+    for (
+      let index = 0;
+      index < tests.length;
+      index++
     ) {
 
-      const expected =
-        typeof request.expectedOutput ===
-        "string"
-          ? request.expectedOutput
-          : "";
+      const test =
+        tests[index];
 
-      const actual =
-        executionResult.stdout;
+      const testNumber =
+        index + 1;
 
-      const matches =
-        outputsMatch(
-          actual,
-          expected
+      const executionResult =
+        await runProcess(
+          executablePath,
+          [],
+          {
+            cwd:
+              jobDirectory,
+
+            timeoutMs:
+              executionTimeoutMs,
+
+            stdin:
+              test.input,
+
+            maxOutputBytes:
+              MAX_OUTPUT_SIZE,
+          }
         );
 
-      /*
-       * TEMPORARY SERVER LOG
-       *
-       * This makes the deployed Render logs explicitly
-       * show what the judge compared.
-       */
-      console.log(
-        "JUDGE_RESULT",
-        JSON.stringify({
-          actual,
-          expected,
-          normalizedActual:
-            normalizeOutput(
-              actual
-            ),
-          normalizedExpected:
-            normalizeOutput(
-              expected
-            ),
-          matches,
-        })
-      );
+      totalExecutionTimeMs +=
+        executionResult.executionTimeMs;
 
-      if (!matches) {
+      /* ===================================================
+         TIME LIMIT
+         =================================================== */
+
+      if (
+        executionResult.timedOut
+      ) {
+
+        const result:
+          TestCaseResult = {
+          testNumber,
+
+          status:
+            "TIME_LIMIT_EXCEEDED",
+
+          input:
+            test.input,
+
+          expectedOutput:
+            test.expectedOutput,
+
+          stdout:
+            executionResult.stdout,
+
+          stderr:
+            executionResult.stderr,
+
+          executionTimeMs:
+            executionResult.executionTimeMs,
+
+          exitCode:
+            null,
+        };
+
+        testResults.push(
+          result
+        );
+
         return {
           ok: false,
 
           status:
-            "WRONG_ANSWER",
+            "TIME_LIMIT_EXCEEDED",
 
           stdout:
-            actual,
+            executionResult.stdout,
+
+          stderr:
+            executionResult.stderr,
+
+          executionTimeMs:
+            totalExecutionTimeMs,
+
+          exitCode:
+            null,
+
+          testResults,
+
+          failedTest:
+            testNumber,
+
+          expectedOutput:
+            test.expectedOutput,
+        };
+      }
+
+      /* ===================================================
+         OUTPUT LIMIT
+         =================================================== */
+
+      if (
+        executionResult.outputLimitExceeded
+      ) {
+
+        const result:
+          TestCaseResult = {
+          testNumber,
+
+          status:
+            "OUTPUT_LIMIT_EXCEEDED",
+
+          input:
+            test.input,
+
+          expectedOutput:
+            test.expectedOutput,
+
+          stdout:
+            executionResult.stdout,
 
           stderr:
             executionResult.stderr,
@@ -521,15 +588,240 @@ export async function executeCpp(
 
           exitCode:
             executionResult.exitCode,
+        };
+
+        testResults.push(
+          result
+        );
+
+        return {
+          ok: false,
+
+          status:
+            "OUTPUT_LIMIT_EXCEEDED",
+
+          stdout:
+            executionResult.stdout,
+
+          stderr:
+            executionResult.stderr,
+
+          executionTimeMs:
+            totalExecutionTimeMs,
+
+          exitCode:
+            executionResult.exitCode,
+
+          testResults,
+
+          failedTest:
+            testNumber,
 
           expectedOutput:
-            expected,
+            test.expectedOutput,
         };
       }
+
+      /* ===================================================
+         RUNTIME ERROR
+         =================================================== */
+
+      if (
+        executionResult.exitCode !==
+        0
+      ) {
+
+        const result:
+          TestCaseResult = {
+          testNumber,
+
+          status:
+            "RUNTIME_ERROR",
+
+          input:
+            test.input,
+
+          expectedOutput:
+            test.expectedOutput,
+
+          stdout:
+            executionResult.stdout,
+
+          stderr:
+            executionResult.stderr,
+
+          executionTimeMs:
+            executionResult.executionTimeMs,
+
+          exitCode:
+            executionResult.exitCode,
+        };
+
+        testResults.push(
+          result
+        );
+
+        return {
+          ok: false,
+
+          status:
+            "RUNTIME_ERROR",
+
+          stdout:
+            executionResult.stdout,
+
+          stderr:
+            executionResult.stderr,
+
+          executionTimeMs:
+            totalExecutionTimeMs,
+
+          exitCode:
+            executionResult.exitCode,
+
+          testResults,
+
+          failedTest:
+            testNumber,
+
+          expectedOutput:
+            test.expectedOutput,
+        };
+      }
+
+      /* ===================================================
+         OUTPUT COMPARISON
+         =================================================== */
+
+      const matches =
+        outputsMatch(
+          executionResult.stdout,
+          test.expectedOutput
+        );
+
+      /*
+       * TEMPORARY DEBUG LOG.
+       *
+       * We will remove this after the multi-test
+       * behavior is verified.
+       */
+      console.log(
+        "JUDGE_RESULT",
+        JSON.stringify({
+          testNumber,
+
+          actual:
+            executionResult.stdout,
+
+          expected:
+            test.expectedOutput,
+
+          normalizedActual:
+            normalizeOutput(
+              executionResult.stdout
+            ),
+
+          normalizedExpected:
+            normalizeOutput(
+              test.expectedOutput
+            ),
+
+          matches,
+        })
+      );
+
+      if (!matches) {
+
+        const result:
+          TestCaseResult = {
+          testNumber,
+
+          status:
+            "WRONG_ANSWER",
+
+          input:
+            test.input,
+
+          expectedOutput:
+            test.expectedOutput,
+
+          stdout:
+            executionResult.stdout,
+
+          stderr:
+            executionResult.stderr,
+
+          executionTimeMs:
+            executionResult.executionTimeMs,
+
+          exitCode:
+            executionResult.exitCode,
+        };
+
+        testResults.push(
+          result
+        );
+
+        return {
+          ok: false,
+
+          status:
+            "WRONG_ANSWER",
+
+          stdout:
+            executionResult.stdout,
+
+          stderr:
+            executionResult.stderr,
+
+          executionTimeMs:
+            totalExecutionTimeMs,
+
+          exitCode:
+            executionResult.exitCode,
+
+          testResults,
+
+          failedTest:
+            testNumber,
+
+          expectedOutput:
+            test.expectedOutput,
+        };
+      }
+
+      /* ===================================================
+         TEST PASSED
+         =================================================== */
+
+      testResults.push({
+        testNumber,
+
+        status:
+          "ACCEPTED",
+
+        input:
+          test.input,
+
+        expectedOutput:
+          test.expectedOutput,
+
+        stdout:
+          executionResult.stdout,
+
+        stderr:
+          executionResult.stderr,
+
+        executionTimeMs:
+          executionResult.executionTimeMs,
+
+        exitCode:
+          executionResult.exitCode,
+      });
     }
 
     /* =====================================================
-       ACCEPTED
+       ALL TESTS PASSED
        ===================================================== */
 
     return {
@@ -539,16 +831,18 @@ export async function executeCpp(
         "ACCEPTED",
 
       stdout:
-        executionResult.stdout,
+        testResults[
+          testResults.length - 1
+        ]?.stdout ?? "",
 
-      stderr:
-        executionResult.stderr,
+      stderr: "",
 
       executionTimeMs:
-        executionResult.executionTimeMs,
+        totalExecutionTimeMs,
 
-      exitCode:
-        executionResult.exitCode,
+      exitCode: 0,
+
+      testResults,
     };
 
   } catch (error) {
@@ -590,6 +884,7 @@ export async function executeCpp(
         jobDirectory,
         {
           recursive: true,
+
           force: true,
         }
       );
@@ -624,12 +919,14 @@ function runProcess(
 
       let stderr = "";
 
-      let timedOut = false;
+      let timedOut =
+        false;
 
       let outputLimitExceeded =
         false;
 
-      let finished = false;
+      let finished =
+        false;
 
       /* ===================================================
          SPAWN
@@ -678,7 +975,8 @@ function runProcess(
             return;
           }
 
-          finished = true;
+          finished =
+            true;
 
           const end =
             process.hrtime.bigint();
@@ -690,16 +988,21 @@ function runProcess(
 
           resolve({
             stdout,
+
             stderr,
+
             exitCode,
+
             executionTimeMs,
+
             timedOut,
+
             outputLimitExceeded,
           });
         };
 
       /* ===================================================
-         OPTIONAL TIMEOUT
+         TIMEOUT
          =================================================== */
 
       let timeout:
@@ -736,7 +1039,9 @@ function runProcess(
          STDIN
          =================================================== */
 
-      if (child.stdin) {
+      if (
+        child.stdin
+      ) {
 
         child.stdin.write(
           options.stdin
@@ -749,7 +1054,9 @@ function runProcess(
          STDOUT
          =================================================== */
 
-      if (child.stdout) {
+      if (
+        child.stdout
+      ) {
 
         child.stdout.on(
           "data",
@@ -788,7 +1095,9 @@ function runProcess(
          STDERR
          =================================================== */
 
-      if (child.stderr) {
+      if (
+        child.stderr
+      ) {
 
         child.stderr.on(
           "data",
@@ -834,7 +1143,10 @@ function runProcess(
             number | null
         ) => {
 
-          if (timeout) {
+          if (
+            timeout
+          ) {
+
             clearTimeout(
               timeout
             );
@@ -851,10 +1163,14 @@ function runProcess(
       child.on(
         "error",
         (
-          error: Error
+          error:
+            Error
         ) => {
 
-          if (timeout) {
+          if (
+            timeout
+          ) {
+
             clearTimeout(
               timeout
             );
