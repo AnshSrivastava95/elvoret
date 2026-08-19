@@ -48,6 +48,10 @@ const DEFAULT_TIME_LIMIT_MS =
 const MAX_TIME_LIMIT_MS =
   10_000;
 
+/*
+ * Small runtime buffer so process startup / shutdown overhead
+ * does not immediately turn a program into a TLE.
+ */
 const EXECUTION_BUFFER_MS =
   500;
 
@@ -144,11 +148,13 @@ function outputsMatch(
 function getManualTests(
   request: ExecuteRequest
 ): ExecuteTestCase[] {
+
   if (
     Array.isArray(
       request.tests
     )
   ) {
+
     return request.tests
       .slice(
         0,
@@ -172,12 +178,13 @@ function getManualTests(
   }
 
   /*
-   * Backward compatibility.
+   * Backward compatibility for a single test.
    */
   if (
     typeof request.expectedOutput ===
     "string"
   ) {
+
     return [
       {
         input:
@@ -202,6 +209,7 @@ function getManualTests(
 function buildGeneratedTests(
   request: ExecuteRequest
 ): GeneratedTestCase[] {
+
   if (
     !request.generator
   ) {
@@ -234,6 +242,7 @@ export async function executeCpp(
     typeof request.code !==
     "string"
   ) {
+
     return {
       ok: false,
 
@@ -257,6 +266,7 @@ export async function executeCpp(
     request.code.length >
     MAX_CODE_SIZE
   ) {
+
     return {
       ok: false,
 
@@ -280,12 +290,6 @@ export async function executeCpp(
      COMPLEXITY ANALYSIS
      ======================================================= */
 
-  /*
-   * This is static heuristic analysis.
-   *
-   * It does NOT execute the code and it does not
-   * claim to mathematically prove arbitrary C++ Big-O.
-   */
   const complexity: ComplexityInfo =
     analyzeComplexity(
       request.code,
@@ -293,7 +297,7 @@ export async function executeCpp(
     );
 
   /* =======================================================
-     LIMIT
+     RUNTIME LIMIT
      ======================================================= */
 
   const requestedTimeLimit =
@@ -314,16 +318,15 @@ export async function executeCpp(
     );
 
   /*
-   * The extra buffer prevents tiny process/startup
-   * overhead from immediately becoming a judge TLE.
+   * This is ONLY for execution of the compiled
+   * student/reference program.
    */
   const executionTimeoutMs =
     timeLimitMs +
     EXECUTION_BUFFER_MS;
 
   /*
-   * Memory is reserved for a future sandbox layer.
-   * We don't pretend it is enforced yet.
+   * Reserved for future sandbox memory enforcement.
    */
   const memoryLimitMb =
     request.memoryLimitMb;
@@ -411,8 +414,8 @@ export async function executeCpp(
         "string";
 
     /*
-     * If no expected output, tests, or generator exist,
-     * this is raw execution.
+     * No expected output/tests/generator means
+     * raw execution mode.
      */
     const isRawRun =
       !hasGeneratedTests &&
@@ -423,6 +426,16 @@ export async function executeCpp(
        COMPILE STUDENT
        ===================================================== */
 
+    /*
+     * IMPORTANT:
+     *
+     * There is intentionally NO timeoutMs here.
+     *
+     * Compilation time is NOT the problem's runtime.
+     *
+     * The problem time limit starts when the compiled
+     * executable is actually executed.
+     */
     const studentCompileResult =
       await runProcess(
         "g++",
@@ -438,22 +451,6 @@ export async function executeCpp(
           cwd:
             jobDirectory,
 
-          /*
-           * Compilation has a safety timeout.
-           *
-           * This is independent of the problem's runtime
-           * limit and is simply there to prevent a compiler
-           * process from hanging indefinitely.
-           */
-          timeoutMs:
-            Math.min(
-              Math.max(
-                timeLimitMs,
-                2_000
-              ),
-              10_000
-            ),
-
           stdin: "",
 
           maxOutputBytes:
@@ -462,40 +459,13 @@ export async function executeCpp(
       );
 
     /* =====================================================
-       STUDENT COMPILATION TIMEOUT
-       ===================================================== */
-
-    if (
-      studentCompileResult.timedOut
-    ) {
-      return {
-        ok: false,
-
-        status:
-          "TIME_LIMIT_EXCEEDED",
-
-        stdout:
-          studentCompileResult.stdout,
-
-        stderr:
-          studentCompileResult.stderr,
-
-        executionTimeMs:
-          studentCompileResult.executionTimeMs,
-
-        exitCode: null,
-
-        complexity,
-      };
-    }
-
-    /* =====================================================
        STUDENT COMPILER OUTPUT LIMIT
        ===================================================== */
 
     if (
       studentCompileResult.outputLimitExceeded
     ) {
+
       return {
         ok: false,
 
@@ -526,6 +496,7 @@ export async function executeCpp(
       studentCompileResult.exitCode !==
       0
     ) {
+
       return {
         ok: false,
 
@@ -566,6 +537,7 @@ export async function executeCpp(
         input.length >
         MAX_INPUT_SIZE
       ) {
+
         return {
           ok: false,
 
@@ -624,8 +596,7 @@ export async function executeCpp(
     ) {
 
       /*
-       * Generated tests contain inputs only.
-       * The reference solution generates expected outputs.
+       * Generated tests initially contain only inputs.
        */
       const generated =
         buildGeneratedTests(
@@ -633,8 +604,10 @@ export async function executeCpp(
         );
 
       if (
-        generated.length === 0
+        generated.length ===
+        0
       ) {
+
         return {
           ok: false,
 
@@ -656,16 +629,17 @@ export async function executeCpp(
         };
       }
 
-      /*
-       * Generated judging requires a reference
-       * solution.
-       */
+      /* ===================================================
+         REFERENCE VALIDATION
+         =================================================== */
+
       if (
         typeof request.referenceCode !==
         "string" ||
         request.referenceCode.trim()
           .length === 0
       ) {
+
         return {
           ok: false,
 
@@ -691,6 +665,7 @@ export async function executeCpp(
         request.referenceCode.length >
         MAX_CODE_SIZE
       ) {
+
         return {
           ok: false,
 
@@ -726,6 +701,10 @@ export async function executeCpp(
          COMPILE REFERENCE
          =================================================== */
 
+      /*
+       * Like student compilation, this has no problem
+       * runtime limit. It is infrastructure compilation.
+       */
       const referenceCompileResult =
         await runProcess(
           "g++",
@@ -741,13 +720,6 @@ export async function executeCpp(
             cwd:
               jobDirectory,
 
-            /*
-             * Reference compilation is infrastructure work,
-             * not the student's problem time limit.
-             */
-            timeoutMs:
-              10_000,
-
             stdin: "",
 
             maxOutputBytes:
@@ -755,20 +727,18 @@ export async function executeCpp(
           }
         );
 
-      /* ===================================================
-         REFERENCE COMPILATION FAILED
-         =================================================== */
-
       if (
-        referenceCompileResult.timedOut
+        referenceCompileResult.outputLimitExceeded
       ) {
+
         return {
           ok: false,
 
           status:
             "INVALID_TEST_SUITE",
 
-          stdout: "",
+          stdout:
+            referenceCompileResult.stdout,
 
           stderr:
             referenceCompileResult.stderr,
@@ -776,26 +746,33 @@ export async function executeCpp(
           executionTimeMs:
             referenceCompileResult.executionTimeMs,
 
-          exitCode: null,
+          exitCode:
+            referenceCompileResult.exitCode,
 
           error:
-            "Reference solution compilation timed out.",
+            "Reference solution compilation produced too much output.",
 
           complexity,
         };
       }
 
+      /* ===================================================
+         REFERENCE COMPILATION FAILED
+         =================================================== */
+
       if (
         referenceCompileResult.exitCode !==
         0
       ) {
+
         return {
           ok: false,
 
           status:
             "INVALID_TEST_SUITE",
 
-          stdout: "",
+          stdout:
+            referenceCompileResult.stdout,
 
           stderr:
             referenceCompileResult.stderr,
@@ -826,6 +803,7 @@ export async function executeCpp(
           generatedTest.input.length >
           MAX_INPUT_SIZE
         ) {
+
           return {
             ok: false,
 
@@ -867,19 +845,21 @@ export async function executeCpp(
           );
 
         /* =================================================
-           REFERENCE TLE
+           REFERENCE TIME LIMIT
            ================================================= */
 
         if (
           referenceResult.timedOut
         ) {
+
           return {
             ok: false,
 
             status:
               "INVALID_TEST_SUITE",
 
-            stdout: "",
+            stdout:
+              referenceResult.stdout,
 
             stderr:
               referenceResult.stderr,
@@ -903,13 +883,15 @@ export async function executeCpp(
         if (
           referenceResult.outputLimitExceeded
         ) {
+
           return {
             ok: false,
 
             status:
               "INVALID_TEST_SUITE",
 
-            stdout: "",
+            stdout:
+              referenceResult.stdout,
 
             stderr:
               referenceResult.stderr,
@@ -935,6 +917,7 @@ export async function executeCpp(
           referenceResult.exitCode !==
           0
         ) {
+
           return {
             ok: false,
 
@@ -972,7 +955,7 @@ export async function executeCpp(
     } else {
 
       /*
-       * Manual tests.
+       * Manual visible tests.
        */
       tests =
         getManualTests(
@@ -985,8 +968,10 @@ export async function executeCpp(
        ===================================================== */
 
     if (
-      tests.length === 0
+      tests.length ===
+      0
     ) {
+
       return {
         ok: false,
 
@@ -1053,7 +1038,7 @@ export async function executeCpp(
         executionResult.executionTimeMs;
 
       /* ===================================================
-         TIME LIMIT EXCEEDED
+         TIME LIMIT
          =================================================== */
 
       if (
@@ -1083,7 +1068,8 @@ export async function executeCpp(
           executionTimeMs:
             executionResult.executionTimeMs,
 
-          exitCode: null,
+          exitCode:
+            null,
         };
 
         testResults.push(
@@ -1105,7 +1091,8 @@ export async function executeCpp(
           executionTimeMs:
             totalExecutionTimeMs,
 
-          exitCode: null,
+          exitCode:
+            null,
 
           testResults,
 
@@ -1328,7 +1315,7 @@ export async function executeCpp(
       }
 
       /* ===================================================
-         PASSED
+         ACCEPTED TEST
          =================================================== */
 
       testResults.push({
@@ -1445,6 +1432,7 @@ function buildRawExecutionResponse(
   if (
     result.timedOut
   ) {
+
     return {
       ok: false,
 
@@ -1460,7 +1448,8 @@ function buildRawExecutionResponse(
       executionTimeMs:
         result.executionTimeMs,
 
-      exitCode: null,
+      exitCode:
+        null,
 
       complexity,
     };
@@ -1469,6 +1458,7 @@ function buildRawExecutionResponse(
   if (
     result.outputLimitExceeded
   ) {
+
     return {
       ok: false,
 
@@ -1492,8 +1482,10 @@ function buildRawExecutionResponse(
   }
 
   if (
-    result.exitCode !== 0
+    result.exitCode !==
+    0
   ) {
+
     return {
       ok: false,
 
@@ -1558,12 +1550,14 @@ function runProcess(
 
       let stderr = "";
 
-      let timedOut = false;
+      let timedOut =
+        false;
 
       let outputLimitExceeded =
         false;
 
-      let finished = false;
+      let finished =
+        false;
 
       /* ===================================================
          SPAWN
@@ -1608,19 +1602,24 @@ function runProcess(
             number | null
         ): void => {
 
-          if (finished) {
+          if (
+            finished
+          ) {
             return;
           }
 
-          finished = true;
+          finished =
+            true;
 
           const end =
             process.hrtime.bigint();
 
           const executionTimeMs =
             Number(
-              end - start
-            ) / 1_000_000;
+              end -
+                start
+            ) /
+            1_000_000;
 
           resolve({
             stdout,
@@ -1638,13 +1637,14 @@ function runProcess(
         };
 
       /* ===================================================
-         TIMEOUT
+         EXECUTION TIMEOUT
          =================================================== */
 
       let timeout:
         ReturnType<
           typeof setTimeout
-        > | undefined;
+        > |
+        undefined;
 
       if (
         options.timeoutMs !==
@@ -1655,11 +1655,14 @@ function runProcess(
           setTimeout(
             () => {
 
-              if (finished) {
+              if (
+                finished
+              ) {
                 return;
               }
 
-              timedOut = true;
+              timedOut =
+                true;
 
               child.kill(
                 "SIGKILL"
@@ -1700,7 +1703,9 @@ function runProcess(
               Buffer | string
           ) => {
 
-            if (finished) {
+            if (
+              finished
+            ) {
               return;
             }
 
@@ -1741,7 +1746,9 @@ function runProcess(
               Buffer | string
           ) => {
 
-            if (finished) {
+            if (
+              finished
+            ) {
               return;
             }
 
