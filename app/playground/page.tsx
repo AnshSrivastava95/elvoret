@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import Link from "next/link";
 import {
   Play,
@@ -18,6 +18,10 @@ import LanguageSelector, {
 } from "@/components/code/LanguageSelector";
 
 import OutputPanel from "@/components/code/OutputPanel";
+
+/* =========================================================
+   DEFAULT CODE
+   ========================================================= */
 
 const DEFAULT_CODE = {
   cpp: `#include <iostream>
@@ -68,12 +72,13 @@ export default function PlaygroundPage() {
   const [language, setLanguage] =
     useState(LANGUAGES[0]);
 
+  const initialCode =
+    DEFAULT_CODE[
+      LANGUAGES[0].value as keyof typeof DEFAULT_CODE
+    ] || "";
+
   const [code, setCode] =
-    useState(
-      DEFAULT_CODE[
-        language.value as keyof typeof DEFAULT_CODE
-      ]
-    );
+    useState(initialCode);
 
   const [input, setInput] =
     useState("");
@@ -93,6 +98,18 @@ export default function PlaygroundPage() {
   const [executionTime, setExecutionTime] =
     useState<number | null>(null);
 
+  /*
+   * Refs always contain the latest editor/input values.
+   *
+   * This avoids relying on a React state update having
+   * committed before the user clicks Run.
+   */
+  const codeRef =
+    useRef(initialCode);
+
+  const inputRef =
+    useRef("");
+
   /* =======================================================
      LANGUAGE CHANGE
      ======================================================= */
@@ -106,14 +123,20 @@ export default function PlaygroundPage() {
       selectedLanguage
     );
 
-    const languageCode =
+    const nextCode =
       DEFAULT_CODE[
         selectedLanguage.value as keyof typeof DEFAULT_CODE
-      ];
+      ] || "";
 
-    setCode(
-      languageCode || ""
-    );
+    setCode(nextCode);
+
+    codeRef.current =
+      nextCode;
+
+    setInput("");
+
+    inputRef.current =
+      "";
 
     setOutput("");
 
@@ -130,13 +153,20 @@ export default function PlaygroundPage() {
 
   function resetCode() {
 
-    setCode(
+    const resetValue =
       DEFAULT_CODE[
         language.value as keyof typeof DEFAULT_CODE
-      ] || ""
-    );
+      ] || "";
+
+    setCode(resetValue);
+
+    codeRef.current =
+      resetValue;
 
     setInput("");
+
+    inputRef.current =
+      "";
 
     setOutput("");
 
@@ -153,11 +183,30 @@ export default function PlaygroundPage() {
 
   async function runCpp() {
 
+    /*
+     * Capture the exact current values at the moment
+     * Run is clicked.
+     */
+    const currentCode =
+      codeRef.current;
+
+    const currentInput =
+      inputRef.current;
+
+    console.log(
+      "PLAYGROUND REQUEST",
+      {
+        input: currentInput,
+        code: currentCode,
+      }
+    );
+
     const response =
       await fetch(
         "/api/executor",
         {
-          method: "POST",
+          method:
+            "POST",
 
           headers: {
             "Content-Type":
@@ -172,14 +221,11 @@ export default function PlaygroundPage() {
               language:
                 "cpp",
 
-              code,
+              code:
+                currentCode,
 
-              input,
-
-              /*
-               * Playground execution does not
-               * judge against expected output.
-               */
+              input:
+                currentInput,
             }),
         }
       );
@@ -200,8 +246,12 @@ export default function PlaygroundPage() {
     }
 
     /*
-     * 422 is a legitimate execution verdict,
-     * such as TLE, compilation error, or runtime error.
+     * 422 is a legitimate execution result:
+     *
+     * COMPILATION_ERROR
+     * RUNTIME_ERROR
+     * TIME_LIMIT_EXCEEDED
+     * OUTPUT_LIMIT_EXCEEDED
      */
     if (
       !response.ok &&
@@ -223,11 +273,18 @@ export default function PlaygroundPage() {
 
   async function runLegacyLanguage() {
 
+    const currentCode =
+      codeRef.current;
+
+    const currentInput =
+      inputRef.current;
+
     const response =
       await fetch(
         "/api/code/run",
         {
-          method: "POST",
+          method:
+            "POST",
 
           headers: {
             "Content-Type":
@@ -237,13 +294,13 @@ export default function PlaygroundPage() {
           body:
             JSON.stringify({
               source_code:
-                code,
+                currentCode,
 
               language_id:
                 language.id,
 
               stdin:
-                input,
+                currentInput,
             }),
         }
       );
@@ -262,7 +319,8 @@ export default function PlaygroundPage() {
     }
 
     return {
-      ok: true,
+      ok:
+        true,
 
       status:
         data.status ||
@@ -294,8 +352,9 @@ export default function PlaygroundPage() {
       return;
     }
 
-    setLoading(true);
-
+    /*
+     * Clear old result immediately.
+     */
     setOutput("");
 
     setError("");
@@ -304,18 +363,13 @@ export default function PlaygroundPage() {
 
     setExecutionTime(null);
 
+    setLoading(true);
+
     try {
 
       let data:
         ExecutorResponse;
 
-      /*
-       * Our new Render executor currently supports
-       * C++.
-       *
-       * Other Playground languages continue using
-       * the existing execution API.
-       */
       if (
         language.value.toLowerCase() ===
         "cpp"
@@ -412,7 +466,6 @@ export default function PlaygroundPage() {
               "
             >
               <ArrowLeft size={16} />
-
               Back to Elvoret
             </Link>
 
@@ -470,9 +523,9 @@ export default function PlaygroundPage() {
                     text-gray-600
                   "
                 >
-                  Experiment with code directly in
-                  your browser. No setup, no downloads,
-                  just start building.
+                  Experiment with code directly in your
+                  browser. No setup, no downloads, just
+                  start building.
                 </p>
 
               </div>
@@ -509,9 +562,9 @@ export default function PlaygroundPage() {
             "
           >
 
-            {/* =============================================
+            {/* =================================================
                 TOOLBAR
-            ============================================= */}
+            ================================================= */}
 
             <div
               className="
@@ -530,7 +583,9 @@ export default function PlaygroundPage() {
             >
 
               <LanguageSelector
-                value={language.value}
+                value={
+                  language.value
+                }
                 onChange={
                   handleLanguageChange
                 }
@@ -548,8 +603,12 @@ export default function PlaygroundPage() {
 
                 <button
                   type="button"
-                  onClick={resetCode}
-                  disabled={loading}
+                  onClick={
+                    resetCode
+                  }
+                  disabled={
+                    loading
+                  }
                   className="
                     inline-flex
                     items-center
@@ -569,19 +628,25 @@ export default function PlaygroundPage() {
                     disabled:opacity-50
                   "
                 >
+
                   <RotateCcw
                     size={15}
                   />
 
                   Reset
+
                 </button>
 
                 {/* Run */}
 
                 <button
                   type="button"
-                  onClick={runCode}
-                  disabled={loading}
+                  onClick={
+                    runCode
+                  }
+                  disabled={
+                    loading
+                  }
                   className="
                     inline-flex
                     items-center
@@ -599,33 +664,54 @@ export default function PlaygroundPage() {
                     disabled:opacity-50
                   "
                 >
+
                   <Play
                     size={15}
                   />
 
-                  {loading
-                    ? "Running..."
-                    : "Run Code"}
+                  {
+                    loading
+                      ? "Running..."
+                      : "Run Code"
+                  }
+
                 </button>
 
               </div>
 
             </div>
 
-            {/* =============================================
+            {/* =================================================
                 EDITOR
-            ============================================= */}
+            ================================================= */}
 
             <CodeEditor
-              value={code}
-              language={language.value}
-              onChange={setCode}
+              value={
+                code
+              }
+
+              language={
+                language.value
+              }
+
+              onChange={(
+                nextCode
+              ) => {
+
+                setCode(
+                  nextCode
+                );
+
+                codeRef.current =
+                  nextCode;
+              }}
+
               height="520px"
             />
 
-            {/* =============================================
+            {/* =================================================
                 STANDARD INPUT
-            ============================================= */}
+            ================================================= */}
 
             <div
               className="
@@ -653,13 +739,28 @@ export default function PlaygroundPage() {
 
               <textarea
                 id="stdin"
-                value={input}
-                onChange={(event) =>
-                  setInput(
-                    event.target.value
-                  )
+                value={
+                  input
                 }
+
+                onChange={(
+                  event
+                ) => {
+
+                  const nextInput =
+                    event.target
+                      .value;
+
+                  setInput(
+                    nextInput
+                  );
+
+                  inputRef.current =
+                    nextInput;
+                }}
+
                 placeholder="Enter input for your program..."
+
                 className="
                   min-h-[100px]
                   w-full
@@ -680,11 +781,12 @@ export default function PlaygroundPage() {
 
             </div>
 
-            {/* =============================================
+            {/* =================================================
                 EXECUTION META
-            ============================================= */}
+            ================================================= */}
 
-            {executionTime !== null && (
+            {executionTime !==
+              null && (
               <div
                 className="
                   flex
@@ -723,9 +825,9 @@ export default function PlaygroundPage() {
               </div>
             )}
 
-            {/* =============================================
+            {/* =================================================
                 OUTPUT
-            ============================================= */}
+            ================================================= */}
 
             <OutputPanel
               output={
