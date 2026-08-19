@@ -12,6 +12,26 @@ pattern: "Hash Map"
 date: "2026-08-17"
 featured: true
 description: "Find two numbers that add up to a target and learn how to recognize when a hash map can turn repeated searching into constant-time lookup."
+language: "cpp"
+timeLimit: 2
+examples:
+  - input: |
+      4 9
+      2 7 11 15
+    output: |
+      0 1
+
+  - input: |
+      3 6
+      3 2 4
+    output: |
+      1 2
+
+  - input: |
+      2 6
+      3 3
+    output: |
+      0 1
 hints:
   - "Start with the most obvious approach. What happens if you compare every possible pair?"
   - "For a number x, what other number would you need to reach the target?"
@@ -19,6 +39,24 @@ hints:
 complexity:
   time: "O(n)"
   space: "O(n)"
+starterCode: |
+  #include <bits/stdc++.h>
+  using namespace std;
+
+  int main() {
+      int n, target;
+      cin >> n >> target;
+
+      vector<int> nums(n);
+
+      for (int i = 0; i < n; i++) {
+          cin >> nums[i];
+      }
+
+      // Write your solution here.
+
+      return 0;
+  }
 ---
 
 # Two Sum
@@ -35,11 +73,11 @@ You may assume that exactly one valid answer exists.
 
 ```text
 Input:
-nums = [2, 7, 11, 15]
-target = 9
+4 9
+2 7 11 15
 
 Output:
-[0, 1]
+0 1
 ```
 
 Because:
@@ -52,11 +90,11 @@ Because:
 
 ```text
 Input:
-nums = [3, 2, 4]
-target = 6
+3 6
+3 2 4
 
 Output:
-[1, 2]
+1 2
 ```
 
 Because:
@@ -69,11 +107,11 @@ Because:
 
 ```text
 Input:
-nums = [3, 3]
-target = 6
+2 6
+3 3
 
 Output:
-[0, 1]
+0 1
 ```
 
 ---
@@ -350,7 +388,7 @@ The underlying idea is:
 2. Traverse the array from left to right.
 3. Calculate `complement = target - current`.
 4. Check whether the complement already exists.
-5. If it exists, return its index and the current index.
+5. If it exists, print its index and the current index.
 6. Otherwise, store the current number and continue.
 
 ---
@@ -358,28 +396,33 @@ The underlying idea is:
 ## C++ Solution
 
 ```cpp
-#include <vector>
-#include <unordered_map>
-
+#include <bits/stdc++.h>
 using namespace std;
 
-vector<int> twoSum(vector<int>& nums, int target) {
-    unordered_map<int, int> seen;
+int main() {
+    int n, target;
+    cin >> n >> target;
 
-    for (int i = 0; i < nums.size(); i++) {
-        int complement = target - nums[i];
+    vector<long long> nums(n);
+
+    for (int i = 0; i < n; i++) {
+        cin >> nums[i];
+    }
+
+    unordered_map<long long, int> seen;
+
+    for (int i = 0; i < n; i++) {
+        long long complement = (long long)target - nums[i];
 
         if (seen.find(complement) != seen.end()) {
-            return {
-                seen[complement],
-                i
-            };
+            cout << seen[complement] << " " << i;
+            return 0;
         }
 
         seen[nums[i]] = i;
     }
 
-    return {};
+    return 0;
 }
 ```
 
@@ -390,7 +433,7 @@ vector<int> twoSum(vector<int>& nums, int target) {
 First, we create the hash map:
 
 ```cpp
-unordered_map<int, int> seen;
+unordered_map<long long, int> seen;
 ```
 
 We're storing:
@@ -402,13 +445,13 @@ number → index
 Then we iterate through the array:
 
 ```cpp
-for (int i = 0; i < nums.size(); i++)
+for (int i = 0; i < n; i++)
 ```
 
 For every number, calculate what we need:
 
 ```cpp
-int complement = target - nums[i];
+long long complement = (long long)target - nums[i];
 ```
 
 Now check whether we've already encountered that number:
@@ -420,10 +463,7 @@ if (seen.find(complement) != seen.end())
 If it exists, we have our answer:
 
 ```cpp
-return {
-    seen[complement],
-    i
-};
+cout << seen[complement] << " " << i;
 ```
 
 Otherwise, remember the current number:
@@ -459,7 +499,7 @@ In the worst case, we may store almost every element in the hash map.
 Don't memorize:
 
 ```cpp
-unordered_map<int, int>
+unordered_map<long long, int>
 ```
 
 The syntax will become familiar with practice.
