@@ -7,6 +7,10 @@ import {
 } from "child_process";
 
 import {
+  analyzeComplexity,
+} from "./complexityAnalyzer.js";
+
+import {
   generateTests,
 } from "./testgenerator.js";
 
@@ -16,6 +20,7 @@ import type {
   ExecuteTestCase,
   GeneratedTestCase,
   TestCaseResult,
+  ComplexityInfo,
 } from "./types";
 
 /* =========================================================
@@ -112,7 +117,6 @@ async function ensureWorkRoot(): Promise<void> {
 function normalizeOutput(
   output: string
 ): string {
-
   return output
     .trim()
     .split(/\s+/)
@@ -123,7 +127,6 @@ function outputsMatch(
   actual: string,
   expected: string
 ): boolean {
-
   return (
     normalizeOutput(
       actual
@@ -141,13 +144,11 @@ function outputsMatch(
 function getManualTests(
   request: ExecuteRequest
 ): ExecuteTestCase[] {
-
   if (
     Array.isArray(
       request.tests
     )
   ) {
-
     return request.tests
       .slice(
         0,
@@ -177,7 +178,6 @@ function getManualTests(
     typeof request.expectedOutput ===
     "string"
   ) {
-
     return [
       {
         input:
@@ -202,7 +202,6 @@ function getManualTests(
 function buildGeneratedTests(
   request: ExecuteRequest
 ): GeneratedTestCase[] {
-
   if (
     !request.generator
   ) {
@@ -211,11 +210,10 @@ function buildGeneratedTests(
 
   return generateTests(
     request.generator
-  )
-    .slice(
-      0,
-      MAX_TEST_CASES
-    );
+  ).slice(
+    0,
+    MAX_TEST_CASES
+  );
 }
 
 /* =========================================================
@@ -236,7 +234,6 @@ export async function executeCpp(
     typeof request.code !==
     "string"
   ) {
-
     return {
       ok: false,
 
@@ -260,7 +257,6 @@ export async function executeCpp(
     request.code.length >
     MAX_CODE_SIZE
   ) {
-
     return {
       ok: false,
 
@@ -281,25 +277,53 @@ export async function executeCpp(
   }
 
   /* =======================================================
+     COMPLEXITY ANALYSIS
+     ======================================================= */
+
+  /*
+   * This is static heuristic analysis.
+   *
+   * It does NOT execute the code and it does not
+   * claim to mathematically prove arbitrary C++ Big-O.
+   */
+  const complexity: ComplexityInfo =
+    analyzeComplexity(
+      request.code,
+      request.targetComplexity
+    );
+
+  /* =======================================================
      LIMIT
      ======================================================= */
 
+  const requestedTimeLimit =
+    Number(
+      request.timeLimitMs ??
+        DEFAULT_TIME_LIMIT_MS
+    );
+
   const timeLimitMs =
     clamp(
-      Number(
-        request.timeLimitMs ??
-          DEFAULT_TIME_LIMIT_MS
-      ),
+      Number.isFinite(
+        requestedTimeLimit
+      )
+        ? requestedTimeLimit
+        : DEFAULT_TIME_LIMIT_MS,
       100,
       MAX_TIME_LIMIT_MS
     );
 
+  /*
+   * The extra buffer prevents tiny process/startup
+   * overhead from immediately becoming a judge TLE.
+   */
   const executionTimeoutMs =
     timeLimitMs +
     EXECUTION_BUFFER_MS;
 
   /*
-   * Memory is reserved for the sandbox layer.
+   * Memory is reserved for a future sandbox layer.
+   * We don't pretend it is enforced yet.
    */
   const memoryLimitMb =
     request.memoryLimitMb;
@@ -387,8 +411,8 @@ export async function executeCpp(
         "string";
 
     /*
-     * If no expected output/tests/generator exist,
-     * we're doing raw execution only.
+     * If no expected output, tests, or generator exist,
+     * this is raw execution.
      */
     const isRawRun =
       !hasGeneratedTests &&
@@ -415,9 +439,21 @@ export async function executeCpp(
             jobDirectory,
 
           /*
-           * Compilation deliberately has
-           * no timeout at this stage.
+           * Compilation has a safety timeout.
+           *
+           * This is independent of the problem's runtime
+           * limit and is simply there to prevent a compiler
+           * process from hanging indefinitely.
            */
+          timeoutMs:
+            Math.min(
+              Math.max(
+                timeLimitMs,
+                2_000
+              ),
+              10_000
+            ),
+
           stdin: "",
 
           maxOutputBytes:
@@ -426,13 +462,40 @@ export async function executeCpp(
       );
 
     /* =====================================================
-       STUDENT COMPILE ERROR
+       STUDENT COMPILATION TIMEOUT
+       ===================================================== */
+
+    if (
+      studentCompileResult.timedOut
+    ) {
+      return {
+        ok: false,
+
+        status:
+          "TIME_LIMIT_EXCEEDED",
+
+        stdout:
+          studentCompileResult.stdout,
+
+        stderr:
+          studentCompileResult.stderr,
+
+        executionTimeMs:
+          studentCompileResult.executionTimeMs,
+
+        exitCode: null,
+
+        complexity,
+      };
+    }
+
+    /* =====================================================
+       STUDENT COMPILER OUTPUT LIMIT
        ===================================================== */
 
     if (
       studentCompileResult.outputLimitExceeded
     ) {
-
       return {
         ok: false,
 
@@ -450,14 +513,19 @@ export async function executeCpp(
 
         exitCode:
           studentCompileResult.exitCode,
+
+        complexity,
       };
     }
+
+    /* =====================================================
+       STUDENT COMPILATION ERROR
+       ===================================================== */
 
     if (
       studentCompileResult.exitCode !==
       0
     ) {
-
       return {
         ok: false,
 
@@ -475,6 +543,8 @@ export async function executeCpp(
 
         exitCode:
           studentCompileResult.exitCode,
+
+        complexity,
       };
     }
 
@@ -496,7 +566,6 @@ export async function executeCpp(
         input.length >
         MAX_INPUT_SIZE
       ) {
-
         return {
           ok: false,
 
@@ -513,6 +582,8 @@ export async function executeCpp(
 
           error:
             "Input is too large.",
+
+          complexity,
         };
       }
 
@@ -536,7 +607,8 @@ export async function executeCpp(
         );
 
       return buildRawExecutionResponse(
-        executionResult
+        executionResult,
+        complexity
       );
     }
 
@@ -552,9 +624,8 @@ export async function executeCpp(
     ) {
 
       /*
-       * Generated tests initially contain only input.
-       * Expected outputs are produced by the
-       * reference solution below.
+       * Generated tests contain inputs only.
+       * The reference solution generates expected outputs.
        */
       const generated =
         buildGeneratedTests(
@@ -564,7 +635,6 @@ export async function executeCpp(
       if (
         generated.length === 0
       ) {
-
         return {
           ok: false,
 
@@ -581,12 +651,14 @@ export async function executeCpp(
 
           error:
             "Test generator produced no tests.",
+
+          complexity,
         };
       }
 
       /*
-       * If we're generating tests, a reference
-       * solution is mandatory.
+       * Generated judging requires a reference
+       * solution.
        */
       if (
         typeof request.referenceCode !==
@@ -594,7 +666,6 @@ export async function executeCpp(
         request.referenceCode.trim()
           .length === 0
       ) {
-
         return {
           ok: false,
 
@@ -611,6 +682,8 @@ export async function executeCpp(
 
           error:
             "referenceCode is required when using a test generator.",
+
+          complexity,
         };
       }
 
@@ -618,7 +691,6 @@ export async function executeCpp(
         request.referenceCode.length >
         MAX_CODE_SIZE
       ) {
-
         return {
           ok: false,
 
@@ -635,6 +707,8 @@ export async function executeCpp(
 
           error:
             "Reference solution is too large.",
+
+          complexity,
         };
       }
 
@@ -668,8 +742,12 @@ export async function executeCpp(
               jobDirectory,
 
             /*
-             * No compilation timeout yet.
+             * Reference compilation is infrastructure work,
+             * not the student's problem time limit.
              */
+            timeoutMs:
+              10_000,
+
             stdin: "",
 
             maxOutputBytes:
@@ -682,10 +760,35 @@ export async function executeCpp(
          =================================================== */
 
       if (
+        referenceCompileResult.timedOut
+      ) {
+        return {
+          ok: false,
+
+          status:
+            "INVALID_TEST_SUITE",
+
+          stdout: "",
+
+          stderr:
+            referenceCompileResult.stderr,
+
+          executionTimeMs:
+            referenceCompileResult.executionTimeMs,
+
+          exitCode: null,
+
+          error:
+            "Reference solution compilation timed out.",
+
+          complexity,
+        };
+      }
+
+      if (
         referenceCompileResult.exitCode !==
         0
       ) {
-
         return {
           ok: false,
 
@@ -705,6 +808,8 @@ export async function executeCpp(
 
           error:
             "Reference solution failed to compile.",
+
+          complexity,
         };
       }
 
@@ -718,11 +823,9 @@ export async function executeCpp(
       ) {
 
         if (
-          generatedTest.input
-            .length >
+          generatedTest.input.length >
           MAX_INPUT_SIZE
         ) {
-
           return {
             ok: false,
 
@@ -739,6 +842,8 @@ export async function executeCpp(
 
             error:
               "Generated test input is too large.",
+
+            complexity,
           };
         }
 
@@ -750,10 +855,6 @@ export async function executeCpp(
               cwd:
                 jobDirectory,
 
-              /*
-               * Reference execution gets the same
-               * problem limit plus buffer.
-               */
               timeoutMs:
                 executionTimeoutMs,
 
@@ -765,10 +866,13 @@ export async function executeCpp(
             }
           );
 
+        /* =================================================
+           REFERENCE TLE
+           ================================================= */
+
         if (
           referenceResult.timedOut
         ) {
-
           return {
             ok: false,
 
@@ -787,13 +891,18 @@ export async function executeCpp(
 
             error:
               "Reference solution exceeded the execution limit.",
+
+            complexity,
           };
         }
+
+        /* =================================================
+           REFERENCE OUTPUT LIMIT
+           ================================================= */
 
         if (
           referenceResult.outputLimitExceeded
         ) {
-
           return {
             ok: false,
 
@@ -813,14 +922,19 @@ export async function executeCpp(
 
             error:
               "Reference solution produced too much output.",
+
+            complexity,
           };
         }
+
+        /* =================================================
+           REFERENCE RUNTIME ERROR
+           ================================================= */
 
         if (
           referenceResult.exitCode !==
           0
         ) {
-
           return {
             ok: false,
 
@@ -841,6 +955,8 @@ export async function executeCpp(
 
             error:
               "Reference solution failed while generating expected output.",
+
+            complexity,
           };
         }
 
@@ -864,10 +980,13 @@ export async function executeCpp(
         );
     }
 
+    /* =====================================================
+       VALIDATE TEST SUITE
+       ===================================================== */
+
     if (
       tests.length === 0
     ) {
-
       return {
         ok: false,
 
@@ -884,6 +1003,8 @@ export async function executeCpp(
 
         error:
           "No test cases were supplied.",
+
+        complexity,
       };
     }
 
@@ -932,14 +1053,14 @@ export async function executeCpp(
         executionResult.executionTimeMs;
 
       /* ===================================================
-         TLE
+         TIME LIMIT EXCEEDED
          =================================================== */
 
       if (
         executionResult.timedOut
       ) {
 
-        const result:
+        const testResult:
           TestCaseResult = {
 
           testNumber,
@@ -962,12 +1083,11 @@ export async function executeCpp(
           executionTimeMs:
             executionResult.executionTimeMs,
 
-          exitCode:
-            null,
+          exitCode: null,
         };
 
         testResults.push(
-          result
+          testResult
         );
 
         return {
@@ -985,8 +1105,7 @@ export async function executeCpp(
           executionTimeMs:
             totalExecutionTimeMs,
 
-          exitCode:
-            null,
+          exitCode: null,
 
           testResults,
 
@@ -995,6 +1114,8 @@ export async function executeCpp(
 
           expectedOutput:
             test.expectedOutput,
+
+          complexity,
         };
       }
 
@@ -1006,7 +1127,7 @@ export async function executeCpp(
         executionResult.outputLimitExceeded
       ) {
 
-        const result:
+        const testResult:
           TestCaseResult = {
 
           testNumber,
@@ -1034,7 +1155,7 @@ export async function executeCpp(
         };
 
         testResults.push(
-          result
+          testResult
         );
 
         return {
@@ -1059,6 +1180,8 @@ export async function executeCpp(
 
           failedTest:
             testNumber,
+
+          complexity,
         };
       }
 
@@ -1071,7 +1194,7 @@ export async function executeCpp(
         0
       ) {
 
-        const result:
+        const testResult:
           TestCaseResult = {
 
           testNumber,
@@ -1099,7 +1222,7 @@ export async function executeCpp(
         };
 
         testResults.push(
-          result
+          testResult
         );
 
         return {
@@ -1124,6 +1247,8 @@ export async function executeCpp(
 
           failedTest:
             testNumber,
+
+          complexity,
         };
       }
 
@@ -1137,9 +1262,11 @@ export async function executeCpp(
           test.expectedOutput
         );
 
-      if (!matches) {
+      if (
+        !matches
+      ) {
 
-        const result:
+        const testResult:
           TestCaseResult = {
 
           testNumber,
@@ -1167,7 +1294,7 @@ export async function executeCpp(
         };
 
         testResults.push(
-          result
+          testResult
         );
 
         return {
@@ -1195,6 +1322,8 @@ export async function executeCpp(
 
           expectedOutput:
             test.expectedOutput,
+
+          complexity,
         };
       }
 
@@ -1203,7 +1332,6 @@ export async function executeCpp(
          =================================================== */
 
       testResults.push({
-
         testNumber,
 
         status:
@@ -1247,19 +1375,13 @@ export async function executeCpp(
       stderr: "",
 
       executionTimeMs:
-        testResults.reduce(
-          (
-            total,
-            result
-          ) =>
-            total +
-            result.executionTimeMs,
-          0
-        ),
+        totalExecutionTimeMs,
 
       exitCode: 0,
 
       testResults,
+
+      complexity,
     };
 
   } catch (error) {
@@ -1316,13 +1438,13 @@ export async function executeCpp(
    ========================================================= */
 
 function buildRawExecutionResponse(
-  result: ProcessResult
+  result: ProcessResult,
+  complexity: ComplexityInfo
 ): ExecuteResponse {
 
   if (
     result.timedOut
   ) {
-
     return {
       ok: false,
 
@@ -1338,15 +1460,15 @@ function buildRawExecutionResponse(
       executionTimeMs:
         result.executionTimeMs,
 
-      exitCode:
-        null,
+      exitCode: null,
+
+      complexity,
     };
   }
 
   if (
     result.outputLimitExceeded
   ) {
-
     return {
       ok: false,
 
@@ -1364,13 +1486,14 @@ function buildRawExecutionResponse(
 
       exitCode:
         result.exitCode,
+
+      complexity,
     };
   }
 
   if (
     result.exitCode !== 0
   ) {
-
     return {
       ok: false,
 
@@ -1388,6 +1511,8 @@ function buildRawExecutionResponse(
 
       exitCode:
         result.exitCode,
+
+      complexity,
     };
   }
 
@@ -1408,6 +1533,8 @@ function buildRawExecutionResponse(
 
     exitCode:
       result.exitCode,
+
+    complexity,
   };
 }
 

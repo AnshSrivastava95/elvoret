@@ -10,11 +10,42 @@ export type ExecutionStatus =
   | "INVALID_TEST_SUITE";
 
 /* =========================================================
+   COMPLEXITY
+   ========================================================= */
+
+export interface ComplexityEstimate {
+  time: string;
+
+  space: string;
+
+  confidence:
+    | "low"
+    | "medium"
+    | "high";
+
+  notes: string[];
+}
+
+export interface ComplexityInfo {
+  estimated: ComplexityEstimate;
+
+  target?: {
+    time?: string;
+    space?: string;
+  };
+
+  timeMatchesTarget?: boolean;
+
+  spaceMatchesTarget?: boolean;
+}
+
+/* =========================================================
    MANUAL TEST CASE
    ========================================================= */
 
 export interface ExecuteTestCase {
   input: string;
+
   expectedOutput: string;
 }
 
@@ -30,44 +61,20 @@ export interface NumberRange {
 export interface ArrayGeneratorSpec {
   type: "array";
 
-  /*
-   * Number of generated tests.
-   */
   count: number;
 
-  /*
-   * Deterministic seed.
-   */
   seed?: number;
 
-  /*
-   * Array size.
-   */
   length: NumberRange;
 
-  /*
-   * Element value range.
-   */
   values: NumberRange;
 
-  /*
-   * Generate useful edge cases.
-   */
   includeEdgeCases?: boolean;
 
-  /*
-   * If true, some generated arrays may be sorted.
-   */
   includeSorted?: boolean;
 
-  /*
-   * If true, some generated arrays may be reverse sorted.
-   */
   includeReverseSorted?: boolean;
 
-  /*
-   * If true, duplicate-heavy cases may be generated.
-   */
   includeDuplicates?: boolean;
 }
 
@@ -113,14 +120,8 @@ export type TestGeneratorSpec =
 export interface GeneratedTestCase {
   input: string;
 
-  /*
-   * Not exposed to the browser.
-   */
   expectedOutput?: string;
 
-  /*
-   * Useful internally for debugging.
-   */
   seed: number;
 }
 
@@ -133,11 +134,6 @@ export interface TestCaseResult {
 
   status: ExecutionStatus;
 
-  /*
-   * Input is kept internally.
-   *
-   * The production API can later omit it for hidden tests.
-   */
   input: string;
 
   expectedOutput: string;
@@ -152,7 +148,7 @@ export interface TestCaseResult {
 }
 
 /* =========================================================
-   EXECUTE REQUEST
+   REQUEST
    ========================================================= */
 
 export interface ExecuteRequest {
@@ -164,42 +160,51 @@ export interface ExecuteRequest {
   code: string;
 
   /*
-   * Official/reference solution.
-   *
-   * Required for generated tests.
+   * Official reference solution.
    */
   referenceCode?: string;
 
   /*
-   * Explicit manually supplied tests.
+   * Explicit manual tests.
    */
   tests?: ExecuteTestCase[];
 
   /*
-   * Generated test specification.
+   * Automatic test generator.
    */
   generator?: TestGeneratorSpec;
 
   /*
-   * Backward-compatible single test.
+   * Raw execution input.
    */
   input?: string;
 
+  /*
+   * Legacy single-test expected output.
+   */
   expectedOutput?: string;
 
   /*
-   * Problem execution time.
+   * Problem runtime limit.
    */
   timeLimitMs?: number;
 
   /*
-   * Reserved for memory enforcement.
+   * Reserved for future memory enforcement.
    */
   memoryLimitMb?: number;
+
+  /*
+   * Target complexity from MDX.
+   */
+  targetComplexity?: {
+    time?: string;
+    space?: string;
+  };
 }
 
 /* =========================================================
-   EXECUTE RESPONSE
+   RESPONSE
    ========================================================= */
 
 export interface ExecuteResponse {
@@ -215,12 +220,6 @@ export interface ExecuteResponse {
 
   exitCode: number | null;
 
-  /*
-   * Results are useful for development.
-   *
-   * Later, for hidden tests, we should only expose
-   * safe summary information to the client.
-   */
   testResults?: TestCaseResult[];
 
   failedTest?: number;
@@ -228,4 +227,9 @@ export interface ExecuteResponse {
   expectedOutput?: string;
 
   error?: string;
+
+  /*
+   * Static complexity analysis.
+   */
+  complexity?: ComplexityInfo;
 }

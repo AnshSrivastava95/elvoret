@@ -62,16 +62,18 @@ export async function POST(
     }
 
     /* =====================================================
-       REQUEST
+       BODY
        ===================================================== */
 
     const body =
       await request.json();
 
     const mode: ExecutionMode =
-      body.mode === "submit"
+      body.mode ===
+      "submit"
         ? "submit"
-        : body.mode === "playground"
+        : body.mode ===
+          "playground"
           ? "playground"
           : "run";
 
@@ -110,28 +112,14 @@ export async function POST(
        PLAYGROUND
        ===================================================== */
 
-    /*
-     * Playground does not have:
-     *
-     * - slug
-     * - MDX problem
-     * - reference solution
-     * - hidden tests
-     *
-     * It simply compiles and executes the supplied
-     * program with the supplied stdin.
-     */
-
     if (
       mode ===
       "playground"
     ) {
 
-      /*
-       * Current Render executor only supports C++.
-       */
       if (
-        language !== "cpp"
+        language !==
+        "cpp"
       ) {
 
         return NextResponse.json(
@@ -145,9 +133,6 @@ export async function POST(
         );
       }
 
-      const timeLimitMs =
-        10_000;
-
       const executorPayload = {
         language:
           "cpp",
@@ -160,7 +145,8 @@ export async function POST(
             ? body.input
             : "",
 
-        timeLimitMs,
+        timeLimitMs:
+          10_000,
       };
 
       const response =
@@ -188,37 +174,22 @@ export async function POST(
           }
         );
 
-      let data: unknown;
-
-      try {
-
-        data =
-          await response.json();
-
-      } catch {
-
-        return NextResponse.json(
-          {
-            error:
-              "The execution engine returned an invalid response.",
-          },
-          {
-            status: 502,
-          }
+      const data =
+        await parseExecutorResponse(
+          response
         );
-      }
 
       return NextResponse.json(
-        data,
+        data.body,
         {
           status:
-            response.status,
+            data.status,
         }
       );
     }
 
     /* =====================================================
-       CP MODE REQUIRES SLUG
+       CP SLUG
        ===================================================== */
 
     const slug =
@@ -243,7 +214,7 @@ export async function POST(
     }
 
     /* =====================================================
-       LOAD CP PROBLEM
+       LOAD PROBLEM
        ===================================================== */
 
     const problem =
@@ -291,36 +262,54 @@ export async function POST(
        TIME LIMIT
        ===================================================== */
 
-    const timeLimitSeconds =
+    const rawTimeLimit =
       Number(
         problem.timeLimit ??
           2
       );
 
-    const safeTimeLimitSeconds =
+    const timeLimitSeconds =
       Number.isFinite(
-        timeLimitSeconds
+        rawTimeLimit
       )
         ? Math.max(
             0.1,
-            timeLimitSeconds
+            rawTimeLimit
           )
         : 2;
 
     const timeLimitMs =
       Math.floor(
-        safeTimeLimitSeconds *
+        timeLimitSeconds *
           1000
       );
+
+    /* =====================================================
+       TARGET COMPLEXITY
+       ===================================================== */
+
+    const targetComplexity =
+      problem.complexity
+        ? {
+            time:
+              problem.complexity
+                .time,
+
+            space:
+              problem.complexity
+                .space,
+          }
+        : undefined;
 
     /* =====================================================
        BASE PAYLOAD
        ===================================================== */
 
-    const executorPayload: Record<
-      string,
-      unknown
-    > = {
+    const executorPayload:
+      Record<
+        string,
+        unknown
+      > = {
 
       language:
         "cpp",
@@ -328,14 +317,17 @@ export async function POST(
       code,
 
       timeLimitMs,
+
+      targetComplexity,
     };
 
     /* =====================================================
-       RUN MODE
+       RUN
        ===================================================== */
 
     if (
-      mode === "run"
+      mode ===
+      "run"
     ) {
 
       if (
@@ -369,11 +361,12 @@ export async function POST(
     }
 
     /* =====================================================
-       SUBMIT MODE
+       SUBMIT
        ===================================================== */
 
     if (
-      mode === "submit"
+      mode ===
+      "submit"
     ) {
 
       const referenceCode =
@@ -429,7 +422,7 @@ export async function POST(
         return NextResponse.json(
           {
             error:
-              "This problem has no test generator or examples.",
+              "This problem has no test generator or example test cases.",
           },
           {
             status: 500,
@@ -439,7 +432,7 @@ export async function POST(
     }
 
     /* =====================================================
-       CALL RENDER
+       RENDER EXECUTOR
        ===================================================== */
 
     const response =
@@ -467,31 +460,16 @@ export async function POST(
         }
       );
 
-    let data: unknown;
-
-    try {
-
-      data =
-        await response.json();
-
-    } catch {
-
-      return NextResponse.json(
-        {
-          error:
-            "The execution engine returned an invalid response.",
-        },
-        {
-          status: 502,
-        }
+    const data =
+      await parseExecutorResponse(
+        response
       );
-    }
 
     return NextResponse.json(
-      data,
+      data.body,
       {
         status:
-          response.status,
+          data.status,
       }
     );
 
@@ -511,5 +489,40 @@ export async function POST(
         status: 502,
       }
     );
+  }
+}
+
+/* =========================================================
+   RESPONSE PARSER
+   ========================================================= */
+
+async function parseExecutorResponse(
+  response: Response
+): Promise<{
+  status: number;
+  body: unknown;
+}> {
+
+  try {
+
+    return {
+      status:
+        response.status,
+
+      body:
+        await response.json(),
+    };
+
+  } catch {
+
+    return {
+      status:
+        502,
+
+      body: {
+        error:
+          "The execution engine returned invalid JSON.",
+      },
+    };
   }
 }

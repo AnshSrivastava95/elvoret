@@ -10,11 +10,19 @@ import {
 const app =
   express();
 
+/* =========================================================
+   BODY PARSER
+   ========================================================= */
+
 app.use(
   express.json({
     limit: "256kb",
   })
 );
+
+/* =========================================================
+   CONFIGURATION
+   ========================================================= */
 
 const PORT =
   Number(
@@ -59,7 +67,7 @@ app.post(
   ) => {
 
     /* =====================================================
-       AUTHENTICATION
+       AUTH
        ===================================================== */
 
     const authorization =
@@ -114,7 +122,7 @@ app.post(
     }
 
     /* =====================================================
-       TESTS VALIDATION
+       TEST VALIDATION
        ===================================================== */
 
     if (
@@ -140,8 +148,12 @@ app.post(
     if (
       req.body?.generator !==
         undefined &&
-      typeof req.body.generator !==
-        "object"
+      (
+        typeof req.body.generator !==
+          "object" ||
+        req.body.generator ===
+          null
+      )
     ) {
 
       return res.status(400).json({
@@ -152,29 +164,27 @@ app.post(
       });
     }
 
+    /* =====================================================
+       EXECUTE
+       ===================================================== */
+
     try {
 
       const result =
         await executeCpp({
+
           language:
             "cpp",
 
           code:
             req.body.code,
 
-          /*
-           * Official solution used only when
-           * generated tests are requested.
-           */
           referenceCode:
             typeof req.body.referenceCode ===
             "string"
               ? req.body.referenceCode
               : undefined,
 
-          /*
-           * Manual multi-test mode.
-           */
           tests:
             Array.isArray(
               req.body.tests
@@ -182,15 +192,9 @@ app.post(
               ? req.body.tests
               : undefined,
 
-          /*
-           * Generated-test mode.
-           */
           generator:
             req.body.generator,
 
-          /*
-           * Backward-compatible single-test mode.
-           */
           input:
             typeof req.body.input ===
             "string"
@@ -208,6 +212,9 @@ app.post(
 
           memoryLimitMb:
             req.body.memoryLimitMb,
+
+          targetComplexity:
+            req.body.targetComplexity,
         });
 
       return res
@@ -239,7 +246,7 @@ app.post(
 );
 
 /* =========================================================
-   START
+   START SERVER
    ========================================================= */
 
 app.listen(

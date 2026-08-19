@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+
 import {
   Play,
   Send,
@@ -41,6 +42,32 @@ interface TestResult {
   exitCode?: number | null;
 }
 
+interface ComplexityEstimate {
+  time: string;
+
+  space: string;
+
+  confidence:
+    | "low"
+    | "medium"
+    | "high";
+
+  notes: string[];
+}
+
+interface ComplexityInfo {
+  estimated: ComplexityEstimate;
+
+  target?: {
+    time?: string;
+    space?: string;
+  };
+
+  timeMatchesTarget?: boolean;
+
+  spaceMatchesTarget?: boolean;
+}
+
 interface ExecutorResponse {
   ok: boolean;
 
@@ -61,6 +88,8 @@ interface ExecutorResponse {
   testResults?: TestResult[];
 
   error?: string;
+
+  complexity?: ComplexityInfo;
 }
 
 interface CodingWorkspaceProps {
@@ -83,8 +112,11 @@ export default function CodingWorkspace({
   starterCode,
   examples,
 }: CodingWorkspaceProps) {
+
   const [code, setCode] =
-    useState(starterCode);
+    useState(
+      starterCode
+    );
 
   const [running, setRunning] =
     useState(false);
@@ -106,306 +138,361 @@ export default function CodingWorkspace({
      RESET
      ======================================================= */
 
-  const resetCode = () => {
-    setCode(starterCode);
+  const resetCode =
+    () => {
 
-    setResult(null);
+      setCode(
+        starterCode
+      );
 
-    setError(null);
-  };
-
-  /* =======================================================
-     EXECUTOR REQUEST
-     ======================================================= */
-
-  const execute = async (
-    mode: "run" | "submit"
-  ) => {
-    if (
-      running ||
-      submitting
-    ) {
-      return;
-    }
-
-    setError(null);
-
-    setResult(null);
-
-    if (
-      mode === "run"
-    ) {
-      setRunning(true);
-    } else {
-      setSubmitting(true);
-    }
-
-    try {
-      const response =
-        await fetch(
-          "/api/executor",
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-
-            body:
-              JSON.stringify({
-                slug,
-
-                code,
-
-                language:
-                  language.toLowerCase(),
-
-                mode,
-              }),
-          }
-        );
-
-      let data:
-        ExecutorResponse;
-
-      try {
-        data =
-          await response.json();
-      } catch {
-        throw new Error(
-          "The executor returned an invalid response."
-        );
-      }
-
-      /*
-       * 422 is a legitimate execution verdict:
-       * WRONG_ANSWER, TLE, RUNTIME_ERROR, etc.
-       */
-      if (
-        !response.ok &&
-        response.status !== 422
-      ) {
-        throw new Error(
-          data.error ||
-          "The execution request failed."
-        );
-      }
-
-      setResult(data);
-    } catch (requestError) {
-      console.error(
-        "Executor request failed:",
-        requestError
+      setResult(
+        null
       );
 
       setError(
-        requestError instanceof Error
-          ? requestError.message
-          : "Could not connect to the execution engine."
+        null
       );
-    } finally {
-      setRunning(false);
-
-      setSubmitting(false);
-    }
-  };
+    };
 
   /* =======================================================
-     STATUS HELPERS
+     EXECUTE
+     ======================================================= */
+
+  const execute =
+    async (
+      mode:
+        | "run"
+        | "submit"
+    ) => {
+
+      if (
+        running ||
+        submitting
+      ) {
+        return;
+      }
+
+      setResult(
+        null
+      );
+
+      setError(
+        null
+      );
+
+      if (
+        mode ===
+        "run"
+      ) {
+        setRunning(
+          true
+        );
+      } else {
+        setSubmitting(
+          true
+        );
+      }
+
+      try {
+
+        const response =
+          await fetch(
+            "/api/executor",
+            {
+              method:
+                "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+              },
+
+              body:
+                JSON.stringify({
+                  slug,
+
+                  code,
+
+                  language:
+                    language.toLowerCase(),
+
+                  mode,
+                }),
+            }
+          );
+
+        let data:
+          ExecutorResponse;
+
+        try {
+
+          data =
+            await response.json();
+
+        } catch {
+
+          throw new Error(
+            "The executor returned an invalid response."
+          );
+        }
+
+        /*
+         * 422 represents legitimate judge results.
+         */
+        if (
+          !response.ok &&
+          response.status !==
+            422
+        ) {
+
+          throw new Error(
+            data.error ||
+            "The execution request failed."
+          );
+        }
+
+        setResult(
+          data
+        );
+
+      } catch (
+        requestError
+      ) {
+
+        console.error(
+          "Executor request failed:",
+          requestError
+        );
+
+        setError(
+          requestError instanceof Error
+            ? requestError.message
+            : "Could not connect to the execution engine."
+        );
+
+      } finally {
+
+        setRunning(
+          false
+        );
+
+        setSubmitting(
+          false
+        );
+      }
+    };
+
+  /* =======================================================
+     STATE
      ======================================================= */
 
   const status =
     result?.status;
 
-  const isAccepted =
-    status ===
-    "ACCEPTED";
+  const testResults =
+    result?.testResults ??
+    [];
 
-  const isWrongAnswer =
-    status ===
-    "WRONG_ANSWER";
+  const passedTests =
+    testResults.filter(
+      (
+        test
+      ) =>
+        test.status ===
+        "ACCEPTED"
+    ).length;
 
-  const isTLE =
-    status ===
-    "TIME_LIMIT_EXCEEDED";
-
-  const isRuntimeError =
-    status ===
-    "RUNTIME_ERROR";
-
-  const isCompileError =
-    status ===
-    "COMPILATION_ERROR";
-
-  const isOutputLimit =
-    status ===
-    "OUTPUT_LIMIT_EXCEEDED";
-
-  const isSystemError =
-    status ===
-      "SYSTEM_ERROR" ||
-    Boolean(error);
+  const totalTests =
+    testResults.length;
 
   /* =======================================================
      VERDICT
      ======================================================= */
 
-  const renderVerdict = () => {
-    if (error) {
+  const renderVerdict =
+    () => {
+
+      if (
+        error
+      ) {
+
+        return (
+          <VerdictCard
+            type="error"
+            icon={
+              <AlertTriangle
+                size={22}
+              />
+            }
+            title="Execution failed"
+            description={
+              error
+            }
+          />
+        );
+      }
+
+      if (
+        !result
+      ) {
+        return null;
+      }
+
+      if (
+        status ===
+        "ACCEPTED"
+      ) {
+
+        return (
+          <VerdictCard
+            type="success"
+            icon={
+              <CheckCircle2
+                size={22}
+              />
+            }
+            title="Accepted"
+            description={
+              totalTests > 0
+                ? `All ${totalTests} test cases passed.`
+                : "Your code executed successfully."
+            }
+            runtime={
+              result.executionTimeMs
+            }
+          />
+        );
+      }
+
+      if (
+        status ===
+        "WRONG_ANSWER"
+      ) {
+
+        return (
+          <VerdictCard
+            type="error"
+            icon={
+              <XCircle
+                size={22}
+              />
+            }
+            title="Wrong Answer"
+            description={
+              result.failedTest
+                ? `Failed on test case ${result.failedTest}.`
+                : "The output did not match the expected output."
+            }
+            runtime={
+              result.executionTimeMs
+            }
+          />
+        );
+      }
+
+      if (
+        status ===
+        "TIME_LIMIT_EXCEEDED"
+      ) {
+
+        return (
+          <VerdictCard
+            type="warning"
+            icon={
+              <Clock3
+                size={22}
+              />
+            }
+            title="Time Limit Exceeded"
+            description={
+              result.failedTest
+                ? `Time limit exceeded on test case ${result.failedTest}.`
+                : "Your program took too long to execute."
+            }
+            runtime={
+              result.executionTimeMs
+            }
+          />
+        );
+      }
+
+      if (
+        status ===
+        "COMPILATION_ERROR"
+      ) {
+
+        return (
+          <VerdictCard
+            type="error"
+            icon={
+              <XCircle
+                size={22}
+              />
+            }
+            title="Compilation Error"
+            description={
+              result.stderr ||
+              "Your code could not be compiled."
+            }
+          />
+        );
+      }
+
+      if (
+        status ===
+        "RUNTIME_ERROR"
+      ) {
+
+        return (
+          <VerdictCard
+            type="error"
+            icon={
+              <AlertTriangle
+                size={22}
+              />
+            }
+            title="Runtime Error"
+            description={
+              result.stderr ||
+              "Your program terminated unexpectedly."
+            }
+            runtime={
+              result.executionTimeMs
+            }
+          />
+        );
+      }
+
+      if (
+        status ===
+        "OUTPUT_LIMIT_EXCEEDED"
+      ) {
+
+        return (
+          <VerdictCard
+            type="warning"
+            icon={
+              <AlertTriangle
+                size={22}
+              />
+            }
+            title="Output Limit Exceeded"
+            description={
+              "Your program produced too much output."
+            }
+            runtime={
+              result.executionTimeMs
+            }
+          />
+        );
+      }
+
       return (
         <VerdictCard
-          variant="error"
+          type="error"
           icon={
             <AlertTriangle
-              size={18}
-            />
-          }
-          title="Execution failed"
-          description={error}
-        />
-      );
-    }
-
-    if (!result) {
-      return null;
-    }
-
-    if (isAccepted) {
-      return (
-        <VerdictCard
-          variant="success"
-          icon={
-            <CheckCircle2
-              size={18}
-            />
-          }
-          title="Accepted"
-          description={
-            result.testResults
-              ? `${result.testResults.length} test case${
-                  result.testResults.length ===
-                  1
-                    ? ""
-                    : "s"
-                } passed successfully.`
-              : "Your code executed successfully."
-          }
-          runtime={
-            result.executionTimeMs
-          }
-        />
-      );
-    }
-
-    if (isWrongAnswer) {
-      return (
-        <VerdictCard
-          variant="error"
-          icon={
-            <XCircle
-              size={18}
-            />
-          }
-          title="Wrong Answer"
-          description={
-            result.failedTest
-              ? `Your solution failed on test case ${result.failedTest}.`
-              : "The output did not match the expected output."
-          }
-          runtime={
-            result.executionTimeMs
-          }
-        />
-      );
-    }
-
-    if (isTLE) {
-      return (
-        <VerdictCard
-          variant="warning"
-          icon={
-            <Clock3
-              size={18}
-            />
-          }
-          title="Time Limit Exceeded"
-          description={
-            result.failedTest
-              ? `Execution exceeded the time limit on test case ${result.failedTest}.`
-              : "Your program took too long to execute."
-          }
-          runtime={
-            result.executionTimeMs
-          }
-        />
-      );
-    }
-
-    if (isCompileError) {
-      return (
-        <VerdictCard
-          variant="error"
-          icon={
-            <XCircle
-              size={18}
-            />
-          }
-          title="Compilation Error"
-          description={
-            result.stderr ||
-            "Your code could not be compiled."
-          }
-        />
-      );
-    }
-
-    if (isRuntimeError) {
-      return (
-        <VerdictCard
-          variant="error"
-          icon={
-            <AlertTriangle
-              size={18}
-            />
-          }
-          title="Runtime Error"
-          description={
-            result.stderr ||
-            "Your program terminated unexpectedly."
-          }
-          runtime={
-            result.executionTimeMs
-          }
-        />
-      );
-    }
-
-    if (isOutputLimit) {
-      return (
-        <VerdictCard
-          variant="warning"
-          icon={
-            <AlertTriangle
-              size={18}
-            />
-          }
-          title="Output Limit Exceeded"
-          description="Your program produced too much output."
-          runtime={
-            result.executionTimeMs
-          }
-        />
-      );
-    }
-
-    if (isSystemError) {
-      return (
-        <VerdictCard
-          variant="error"
-          icon={
-            <AlertTriangle
-              size={18}
+              size={22}
             />
           }
           title="Execution Error"
@@ -415,10 +502,337 @@ export default function CodingWorkspace({
           }
         />
       );
-    }
+    };
 
-    return null;
-  };
+  /* =======================================================
+     COMPLEXITY
+     ======================================================= */
+
+  const renderComplexity =
+    () => {
+
+      if (
+        !result?.complexity
+      ) {
+        return null;
+      }
+
+      const complexity =
+        result.complexity;
+
+      const estimated =
+        complexity.estimated;
+
+      return (
+        <div
+          className="
+            mt-4
+            overflow-hidden
+            rounded-2xl
+            border
+            border-gray-200
+            bg-white
+          "
+        >
+
+          {/* Header */}
+
+          <div
+            className="
+              border-b
+              border-gray-100
+              bg-gray-50/80
+              px-5
+              py-4
+            "
+          >
+
+            <p
+              className="
+                text-xs
+                font-bold
+                uppercase
+                tracking-[0.12em]
+                text-gray-400
+              "
+            >
+              COMPLEXITY ANALYSIS
+            </p>
+
+            <div
+              className="
+                mt-1
+                flex
+                flex-col
+                gap-1
+                sm:flex-row
+                sm:items-center
+                sm:justify-between
+              "
+            >
+
+              <p
+                className="
+                  text-sm
+                  font-bold
+                  text-gray-900
+                "
+              >
+                Your estimated complexity
+              </p>
+
+              <span
+                className="
+                  w-fit
+                  rounded-full
+                  bg-purple-50
+                  px-2.5
+                  py-1
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-wide
+                  text-purple-700
+                "
+              >
+                {estimated.confidence} confidence
+              </span>
+
+            </div>
+
+          </div>
+
+          {/* Complexity values */}
+
+          <div
+            className="
+              grid
+              sm:grid-cols-2
+            "
+          >
+
+            {/* Time */}
+
+            <div
+              className="
+                border-b
+                border-gray-100
+                p-5
+                sm:border-b-0
+                sm:border-r
+              "
+            >
+
+              <p
+                className="
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.12em]
+                  text-gray-400
+                "
+              >
+                TIME COMPLEXITY
+              </p>
+
+              <div
+                className="
+                  mt-3
+                  flex
+                  items-center
+                  justify-between
+                  gap-3
+                "
+              >
+
+                <span
+                  className="
+                    font-mono
+                    text-xl
+                    font-extrabold
+                    text-gray-950
+                  "
+                >
+                  {
+                    estimated.time
+                  }
+                </span>
+
+                {typeof complexity.timeMatchesTarget ===
+                  "boolean" && (
+                  <span
+                    className={`
+                      rounded-full
+                      px-2.5
+                      py-1
+                      text-[10px]
+                      font-bold
+                      ${
+                        complexity.timeMatchesTarget
+                          ? "bg-purple-100 text-purple-700"
+                          : "bg-red-100 text-red-700"
+                      }
+                    `}
+                  >
+                    {
+                      complexity.timeMatchesTarget
+                        ? "Matches target"
+                        : "Above target"
+                    }
+                  </span>
+                )}
+
+              </div>
+
+              {complexity.target?.time && (
+                <p
+                  className="
+                    mt-2
+                    text-xs
+                    text-gray-500
+                  "
+                >
+                  Target:{" "}
+                  <span
+                    className="
+                      font-mono
+                      font-semibold
+                      text-gray-700
+                    "
+                  >
+                    {
+                      complexity.target.time
+                    }
+                  </span>
+                </p>
+              )}
+
+            </div>
+
+            {/* Space */}
+
+            <div
+              className="
+                p-5
+              "
+            >
+
+              <p
+                className="
+                  text-[10px]
+                  font-bold
+                  uppercase
+                  tracking-[0.12em]
+                  text-gray-400
+                "
+              >
+                SPACE COMPLEXITY
+              </p>
+
+              <div
+                className="
+                  mt-3
+                  flex
+                  items-center
+                  justify-between
+                  gap-3
+                "
+              >
+
+                <span
+                  className="
+                    font-mono
+                    text-xl
+                    font-extrabold
+                    text-gray-950
+                  "
+                >
+                  {
+                    estimated.space
+                  }
+                </span>
+
+                {typeof complexity.spaceMatchesTarget ===
+                  "boolean" && (
+                  <span
+                    className={`
+                      rounded-full
+                      px-2.5
+                      py-1
+                      text-[10px]
+                      font-bold
+                      ${
+                        complexity.spaceMatchesTarget
+                          ? "bg-purple-100 text-purple-700"
+                          : "bg-red-100 text-red-700"
+                      }
+                    `}
+                  >
+                    {
+                      complexity.spaceMatchesTarget
+                        ? "Matches target"
+                        : "Above target"
+                    }
+                  </span>
+                )}
+
+              </div>
+
+              {complexity.target?.space && (
+                <p
+                  className="
+                    mt-2
+                    text-xs
+                    text-gray-500
+                  "
+                >
+                  Target:{" "}
+                  <span
+                    className="
+                      font-mono
+                      font-semibold
+                      text-gray-700
+                    "
+                  >
+                    {
+                      complexity.target.space
+                    }
+                  </span>
+                </p>
+              )}
+
+            </div>
+
+          </div>
+
+          {/* Disclaimer */}
+
+          <div
+            className="
+              border-t
+              border-gray-100
+              px-5
+              py-3
+            "
+          >
+
+            <p
+              className="
+                text-[11px]
+                leading-5
+                text-gray-400
+              "
+            >
+              Complexity is estimated using static
+              analysis of your submitted code. It is
+              not a formal proof of Big-O complexity.
+            </p>
+
+          </div>
+
+        </div>
+      );
+    };
 
   /* =======================================================
      TEST RESULTS
@@ -426,132 +840,289 @@ export default function CodingWorkspace({
 
   const renderTestResults =
     () => {
+
       if (
-        !result?.testResults ||
-        result.testResults.length ===
-          0
+        totalTests ===
+        0
       ) {
         return null;
       }
 
       return (
-        <div className="mt-4 overflow-hidden rounded-2xl border border-gray-200 bg-white">
-          <div className="border-b border-gray-100 bg-gray-50/80 px-5 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.12em] text-gray-400">
-                  TEST RESULTS
-                </p>
+        <div
+          className="
+            mt-4
+            overflow-hidden
+            rounded-2xl
+            border
+            border-gray-200
+            bg-white
+          "
+        >
 
-                <p className="mt-1 text-sm font-bold text-gray-900">
-                  {result.testResults.length} test case
-                  {result.testResults.length ===
-                  1
-                    ? ""
-                    : "s"}{" "}
-                  executed
-                </p>
-              </div>
+          {/* Header */}
 
-              <span className="rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-gray-500 shadow-sm">
-                {result.testResults.filter(
-                  (test) =>
-                    test.status ===
-                    "ACCEPTED"
-                ).length}
-                /
-                {result.testResults.length} passed
-              </span>
+          <div
+            className="
+              flex
+              items-center
+              justify-between
+              border-b
+              border-gray-100
+              bg-gray-50/80
+              px-5
+              py-4
+            "
+          >
+
+            <div>
+
+              <p
+                className="
+                  text-xs
+                  font-bold
+                  uppercase
+                  tracking-[0.12em]
+                  text-gray-400
+                "
+              >
+                TEST RESULTS
+              </p>
+
+              <p
+                className="
+                  mt-1
+                  text-sm
+                  font-bold
+                  text-gray-900
+                "
+              >
+                {passedTests} /{" "}
+                {totalTests} passed
+              </p>
+
             </div>
+
+            <span
+              className="
+                rounded-full
+                bg-white
+                px-3
+                py-1.5
+                text-xs
+                font-semibold
+                text-gray-500
+                shadow-sm
+              "
+            >
+              {totalTests} test
+              {
+                totalTests === 1
+                  ? ""
+                  : "s"
+              }
+            </span>
+
           </div>
 
-          <div className="divide-y divide-gray-100">
-            {result.testResults.map(
-              (test) => {
+          {/* Progress */}
+
+          <div
+            className="
+              px-5
+              pt-4
+            "
+          >
+
+            <div
+              className="
+                h-2
+                overflow-hidden
+                rounded-full
+                bg-gray-100
+              "
+            >
+
+              <div
+                className="
+                  h-full
+                  rounded-full
+                  bg-purple-600
+                  transition-all
+                  duration-500
+                "
+                style={{
+                  width:
+                    `${
+                      totalTests > 0
+                        ? (
+                            passedTests /
+                            totalTests
+                          ) *
+                          100
+                        : 0
+                    }%`,
+                }}
+              />
+
+            </div>
+
+          </div>
+
+          {/* Rows */}
+
+          <div
+            className="
+              mt-2
+              divide-y
+              divide-gray-100
+            "
+          >
+
+            {testResults.map(
+              (
+                test
+              ) => {
+
                 const passed =
                   test.status ===
                   "ACCEPTED";
-
-                const failed =
-                  !passed;
 
                 return (
                   <div
                     key={
                       test.testNumber
                     }
-                    className="flex items-center justify-between gap-4 px-5 py-4"
+                    className="
+                      flex
+                      items-center
+                      justify-between
+                      gap-4
+                      px-5
+                      py-4
+                    "
                   >
-                    <div className="flex min-w-0 items-center gap-3">
-                      {passed ? (
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-purple-100 text-purple-700">
-                          <CheckCircle2
-                            size={16}
-                          />
-                        </div>
-                      ) : (
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-700">
-                          <XCircle
-                            size={16}
-                          />
-                        </div>
-                      )}
 
-                      <div className="min-w-0">
-                        <p className="text-sm font-bold text-gray-900">
+                    <div
+                      className="
+                        flex
+                        min-w-0
+                        items-center
+                        gap-3
+                      "
+                    >
+
+                      <div
+                        className={`
+                          flex
+                          h-8
+                          w-8
+                          shrink-0
+                          items-center
+                          justify-center
+                          rounded-full
+                          ${
+                            passed
+                              ? "bg-purple-100 text-purple-700"
+                              : "bg-red-100 text-red-700"
+                          }
+                        `}
+                      >
+
+                        {passed ? (
+                          <CheckCircle2
+                            size={15}
+                          />
+                        ) : (
+                          <XCircle
+                            size={15}
+                          />
+                        )}
+
+                      </div>
+
+                      <div>
+
+                        <p
+                          className="
+                            text-sm
+                            font-bold
+                            text-gray-900
+                          "
+                        >
                           Test case{" "}
-                          {test.testNumber}
+                          {
+                            test.testNumber
+                          }
                         </p>
 
                         <p
-                          className={`mt-0.5 text-xs font-semibold ${
-                            passed
-                              ? "text-purple-700"
-                              : "text-red-600"
-                          }`}
+                          className={`
+                            mt-0.5
+                            text-xs
+                            font-medium
+                            ${
+                              passed
+                                ? "text-purple-600"
+                                : "text-red-600"
+                            }
+                          `}
                         >
-                          {test.status ===
-                          "ACCEPTED"
+                          {passed
                             ? "Passed"
                             : test.status
                                 .replace(
                                   /_/g,
                                   " "
                                 )
-                                .toLowerCase()
-                                .replace(
-                                  /^\w/,
-                                  (
-                                    letter
-                                  ) =>
-                                    letter.toUpperCase()
-                                )}
+                                .toLowerCase()}
                         </p>
+
                       </div>
+
                     </div>
 
-                    <div className="shrink-0 text-right">
-                      <p className="font-mono text-xs font-semibold text-gray-500">
-                        {typeof test.executionTimeMs ===
-                        "number"
-                          ? `${test.executionTimeMs.toFixed(
+                    <div
+                      className="
+                        flex
+                        shrink-0
+                        items-center
+                        gap-2
+                      "
+                    >
+
+                      {typeof test.executionTimeMs ===
+                        "number" && (
+                        <span
+                          className="
+                            rounded-full
+                            bg-gray-50
+                            px-2.5
+                            py-1
+                            font-mono
+                            text-[11px]
+                            font-semibold
+                            text-gray-500
+                          "
+                        >
+                          {
+                            test.executionTimeMs.toFixed(
                               0
-                            )} ms`
-                          : "—"}
-                      </p>
+                            )
+                          }{" "}
+                          ms
+                        </span>
+                      )}
 
-                      {failed &&
-                        test.stderr && (
-                          <p className="mt-1 max-w-[220px] truncate text-[10px] text-red-500">
-                            {test.stderr}
-                          </p>
-                        )}
                     </div>
+
                   </div>
                 );
               }
             )}
+
           </div>
+
         </div>
       );
     };
@@ -564,14 +1135,30 @@ export default function CodingWorkspace({
     <section className="mt-14">
 
       {/* =====================================================
-          SECTION HEADER
+          HEADER
       ===================================================== */}
 
-      <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div
+        className="
+          mb-5
+          flex
+          flex-col
+          gap-4
+          sm:flex-row
+          sm:items-end
+          sm:justify-between
+        "
+      >
 
         <div>
 
-          <div className="flex items-center gap-2">
+          <div
+            className="
+              flex
+              items-center
+              gap-2
+            "
+          >
 
             <div
               className="
@@ -587,7 +1174,6 @@ export default function CodingWorkspace({
             >
               <Code2
                 size={17}
-                strokeWidth={2}
               />
             </div>
 
@@ -626,17 +1212,17 @@ export default function CodingWorkspace({
               text-gray-500
             "
           >
-            Don't look at the solution yet. Write your approach,
-            test your thinking, and submit when you're ready.
+            Run against the examples first.
+            Submit when you're confident.
           </p>
 
         </div>
 
-        {/* Reset */}
-
         <button
           type="button"
-          onClick={resetCode}
+          onClick={
+            resetCode
+          }
           disabled={
             running ||
             submitting
@@ -656,19 +1242,20 @@ export default function CodingWorkspace({
             font-semibold
             text-gray-600
             shadow-sm
-            transition-all
+            transition
             hover:border-gray-300
             hover:bg-gray-50
-            hover:text-gray-900
             disabled:cursor-not-allowed
             disabled:opacity-50
           "
         >
+
           <RotateCcw
             size={14}
           />
 
           Reset
+
         </button>
 
       </div>
@@ -688,9 +1275,7 @@ export default function CodingWorkspace({
         "
       >
 
-        {/* ===================================================
-            EDITOR HEADER
-        =================================================== */}
+        {/* Header */}
 
         <div
           className="
@@ -706,17 +1291,66 @@ export default function CodingWorkspace({
           "
         >
 
-          <div className="flex items-center gap-3">
+          <div
+            className="
+              flex
+              items-center
+              gap-3
+            "
+          >
 
-            <div className="flex items-center gap-1.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-[#ef4444]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#f59e0b]" />
-              <span className="h-2.5 w-2.5 rounded-full bg-[#22c55e]" />
+            <div
+              className="
+                flex
+                items-center
+                gap-1.5
+              "
+            >
+
+              <span
+                className="
+                  h-2.5
+                  w-2.5
+                  rounded-full
+                  bg-[#ef4444]
+                "
+              />
+
+              <span
+                className="
+                  h-2.5
+                  w-2.5
+                  rounded-full
+                  bg-[#f59e0b]
+                "
+              />
+
+              <span
+                className="
+                  h-2.5
+                  w-2.5
+                  rounded-full
+                  bg-[#22c55e]
+                "
+              />
+
             </div>
 
-            <div className="h-4 w-px bg-gray-700" />
+            <div
+              className="
+                h-4
+                w-px
+                bg-gray-700
+              "
+            />
 
-            <span className="text-xs font-medium text-gray-400">
+            <span
+              className="
+                text-xs
+                font-medium
+                text-gray-400
+              "
+            >
               solution.
               {
                 language.toLowerCase() ===
@@ -743,14 +1377,14 @@ export default function CodingWorkspace({
               text-gray-300
             "
           >
-            {language.toUpperCase()}
+            {
+              language.toUpperCase()
+            }
           </span>
 
         </div>
 
-        {/* ===================================================
-            CODE AREA
-        =================================================== */}
+        {/* Code editor */}
 
         <div
           className="
@@ -777,22 +1411,43 @@ export default function CodingWorkspace({
               sm:flex
             "
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-gray-700" />
+
+            <span
+              className="
+                h-1.5
+                w-1.5
+                rounded-full
+                bg-gray-700
+              "
+            />
+
             Editing
+
           </div>
 
           <textarea
-            value={code}
-            onChange={(event) => {
+            value={
+              code
+            }
+            onChange={(
+              event
+            ) => {
+
               setCode(
                 event.target.value
               );
 
-              setResult(null);
+              setResult(
+                null
+              );
 
-              setError(null);
+              setError(
+                null
+              );
             }}
-            spellCheck={false}
+            spellCheck={
+              false
+            }
             autoCorrect="off"
             autoCapitalize="off"
             className="
@@ -818,9 +1473,7 @@ export default function CodingWorkspace({
 
         </div>
 
-        {/* ===================================================
-            EDITOR FOOTER
-        =================================================== */}
+        {/* Footer */}
 
         <div
           className="
@@ -839,8 +1492,6 @@ export default function CodingWorkspace({
           "
         >
 
-          {/* Status */}
-
           <div
             className="
               flex
@@ -848,21 +1499,26 @@ export default function CodingWorkspace({
               gap-2
             "
           >
+
             <Terminal
               size={14}
               className="text-gray-600"
             />
 
-            <p className="text-[11px] text-gray-500">
+            <p
+              className="
+                text-[11px]
+                text-gray-500
+              "
+            >
               {running
-                ? "Running your code..."
+                ? "Running against examples..."
                 : submitting
-                  ? "Evaluating your submission..."
+                  ? "Running hidden tests..."
                   : "Ready to run"}
             </p>
-          </div>
 
-          {/* Buttons */}
+          </div>
 
           <div
             className="
@@ -877,7 +1533,9 @@ export default function CodingWorkspace({
             <button
               type="button"
               onClick={() =>
-                execute("run")
+                execute(
+                  "run"
+                )
               }
               disabled={
                 running ||
@@ -897,7 +1555,7 @@ export default function CodingWorkspace({
                 text-xs
                 font-bold
                 text-gray-300
-                transition-all
+                transition
                 hover:border-gray-600
                 hover:bg-gray-800
                 hover:text-white
@@ -905,6 +1563,7 @@ export default function CodingWorkspace({
                 disabled:opacity-60
               "
             >
+
               {running ? (
                 <Loader2
                   size={14}
@@ -919,6 +1578,7 @@ export default function CodingWorkspace({
               {running
                 ? "Running..."
                 : "Run"}
+
             </button>
 
             {/* Submit */}
@@ -926,7 +1586,9 @@ export default function CodingWorkspace({
             <button
               type="button"
               onClick={() =>
-                execute("submit")
+                execute(
+                  "submit"
+                )
               }
               disabled={
                 running ||
@@ -946,13 +1608,13 @@ export default function CodingWorkspace({
                 text-white
                 shadow-sm
                 shadow-purple-900/20
-                transition-all
+                transition
                 hover:bg-purple-500
-                hover:shadow-md
                 disabled:cursor-not-allowed
                 disabled:opacity-60
               "
             >
+
               {submitting ? (
                 <Loader2
                   size={14}
@@ -964,9 +1626,12 @@ export default function CodingWorkspace({
                 />
               )}
 
-              {submitting
-                ? "Submitting..."
-                : "Submit"}
+              {
+                submitting
+                  ? "Submitting..."
+                  : "Submit"
+              }
+
             </button>
 
           </div>
@@ -976,16 +1641,20 @@ export default function CodingWorkspace({
       </div>
 
       {/* =====================================================
-          VERDICT
+          RESULTS
       ===================================================== */}
 
-      {renderVerdict()}
+      {
+        renderVerdict()
+      }
 
-      {/* =====================================================
-          INDIVIDUAL TEST RESULTS
-      ===================================================== */}
+      {
+        renderComplexity()
+      }
 
-      {renderTestResults()}
+      {
+        renderTestResults()
+      }
 
       {/* =====================================================
           EXAMPLES
@@ -993,9 +1662,17 @@ export default function CodingWorkspace({
 
       {examples.length >
         0 && (
-        <div className="mt-10">
+        <div
+          className="
+            mt-10
+          "
+        >
 
-          <div className="mb-4">
+          <div
+            className="
+              mb-4
+            "
+          >
 
             <p
               className="
@@ -1036,22 +1713,22 @@ export default function CodingWorkspace({
                 example,
                 index
               ) => (
+
                 <div
-                  key={index}
+                  key={
+                    index
+                  }
                   className="
                     overflow-hidden
                     rounded-2xl
                     border
                     border-gray-200
                     bg-white
-                    transition-all
-                    duration-200
+                    transition
                     hover:border-gray-300
                     hover:shadow-sm
                   "
                 >
-
-                  {/* Header */}
 
                   <div
                     className="
@@ -1096,8 +1773,6 @@ export default function CodingWorkspace({
 
                   </div>
 
-                  {/* Input / Output */}
-
                   <div
                     className="
                       grid
@@ -1109,7 +1784,11 @@ export default function CodingWorkspace({
                     "
                   >
 
-                    <div className="p-4">
+                    <div
+                      className="
+                        p-4
+                      "
+                    >
 
                       <p
                         className="
@@ -1145,7 +1824,11 @@ export default function CodingWorkspace({
 
                     </div>
 
-                    <div className="p-4">
+                    <div
+                      className="
+                        p-4
+                      "
+                    >
 
                       <p
                         className="
@@ -1201,13 +1884,13 @@ export default function CodingWorkspace({
    ========================================================= */
 
 function VerdictCard({
-  variant,
+  type,
   icon,
   title,
   description,
   runtime,
 }: {
-  variant:
+  type:
     | "success"
     | "error"
     | "warning";
@@ -1220,49 +1903,50 @@ function VerdictCard({
 
   runtime?: number;
 }) {
+
   const styles = {
     success: {
       wrapper:
-        "border-purple-200 bg-purple-50",
-
-      icon:
-        "bg-purple-100 text-purple-700",
+        "border-purple-200 bg-purple-50/70",
 
       title:
         "text-purple-950",
 
       description:
         "text-purple-700",
+
+      icon:
+        "bg-purple-100 text-purple-700",
     },
 
     error: {
       wrapper:
-        "border-red-200 bg-red-50",
-
-      icon:
-        "bg-red-100 text-red-700",
+        "border-red-200 bg-red-50/70",
 
       title:
         "text-red-950",
 
       description:
         "text-red-700",
+
+      icon:
+        "bg-red-100 text-red-700",
     },
 
     warning: {
       wrapper:
-        "border-amber-200 bg-amber-50",
-
-      icon:
-        "bg-amber-100 text-amber-700",
+        "border-amber-200 bg-amber-50/70",
 
       title:
         "text-amber-950",
 
       description:
         "text-amber-700",
+
+      icon:
+        "bg-amber-100 text-amber-700",
     },
-  }[variant];
+  }[type];
 
   return (
     <div
@@ -1282,6 +1966,7 @@ function VerdictCard({
           justify-between
           gap-4
           p-5
+          sm:p-6
         "
       >
 
@@ -1296,8 +1981,8 @@ function VerdictCard({
           <div
             className={`
               flex
-              h-9
-              w-9
+              h-11
+              w-11
               shrink-0
               items-center
               justify-center
@@ -1305,20 +1990,24 @@ function VerdictCard({
               ${styles.icon}
             `}
           >
-            {icon}
+            {
+              icon
+            }
           </div>
 
           <div>
 
-            <p
+            <h3
               className={`
-                text-sm
-                font-bold
+                text-lg
+                font-extrabold
                 ${styles.title}
               `}
             >
-              {title}
-            </p>
+              {
+                title
+              }
+            </h3>
 
             <p
               className={`
@@ -1328,7 +2017,9 @@ function VerdictCard({
                 ${styles.description}
               `}
             >
-              {description}
+              {
+                description
+              }
             </p>
 
           </div>
@@ -1337,7 +2028,7 @@ function VerdictCard({
 
         {typeof runtime ===
           "number" && (
-          <div
+          <span
             className="
               shrink-0
               rounded-full
@@ -1349,9 +2040,13 @@ function VerdictCard({
               text-gray-600
             "
           >
-            {runtime.toFixed(0)}
+            {
+              runtime.toFixed(
+                0
+              )
+            }{" "}
             ms
-          </div>
+          </span>
         )}
 
       </div>
