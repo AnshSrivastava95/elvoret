@@ -23,6 +23,10 @@ export const metadata: Metadata = {
     template: "%s | Elvoret",
   },
 
+  icons: {
+    icon: "/favicon.ico"
+  },
+
   description:
     "Learn, build, and grow with in-depth software engineering articles, AI, Backend Development, DSA, System Design, Frontend, and practical developer roadmaps.",
 
