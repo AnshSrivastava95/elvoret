@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import {
   ArrowLeft,
   Code2,
@@ -14,6 +15,25 @@ interface PageProps {
   params: Promise<{
     slug: string;
   }>;
+}
+
+export async function generateMetadata({
+  params,
+}: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+
+  const problem = await getCPProblem(slug);
+
+  if (!problem) {
+    return {
+      title: "Problem Not Found - Elvoret",
+    };
+  }
+
+  return {
+    title: `${problem.title} - Elvoret`,
+    description: problem.description,
+  };
 }
 
 export default async function CPProblemPage({
