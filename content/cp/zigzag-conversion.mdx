@@ -1,0 +1,1391 @@
+---
+title: "Zigzag Conversion"
+slug: "zigzag-conversion"
+source: "LeetCode"
+sourceId: "6"
+sourceUrl: "https://leetcode.com/problems/zigzag-conversion/"
+difficulty: "Medium"
+topics:
+  - Strings
+  - Simulation
+  - Arrays
+pattern: "Simulation"
+date: "2026-08-25"
+featured: true
+description: "Learn how to simulate a zigzag traversal using row-based storage and a direction variable instead of building a full matrix."
+language: "cpp"
+timeLimit: 2
+examples:
+  - input: |
+      PAYPALISHIRING
+      3
+    output: |
+      PAHNAPLSIIGYIR
+
+  - input: |
+      PAYPALISHIRING
+      4
+    output: |
+      PINALSIGYAHRPI
+hints:
+  - "Do you really need to build the visual zigzag as a matrix?"
+  - "Can you store the characters belonging to each row separately?"
+  - "What happens to your movement when you reach the top or bottom row?"
+  - "Can a direction variable represent moving down and moving up?"
+complexity:
+  time: "O(n)"
+  space: "O(n)"
+starterCode: |
+  #include <bits/stdc++.h>
+  using namespace std;
+
+  int main() {
+      string s;
+      int numRows;
+
+      cin >> s >> numRows;
+
+      // Write your solution here.
+
+      return 0;
+  }
+---
+
+# Zigzag Conversion
+
+## The Problem
+
+You are given a string `s` and an integer `numRows`.
+
+Write the characters of the string in a zigzag pattern across `numRows` rows and then read the rows from top to bottom.
+
+For example:
+
+```text
+Input:
+PAYPALISHIRING
+3
+```
+
+The characters are arranged like this:
+
+```text
+P   A   H   N
+A P L S I I G
+Y   I   R
+```
+
+Reading the rows from top to bottom gives:
+
+```text
+PAHNAPLSIIGYIR
+```
+
+The important thing to understand is that the spaces shown above are **not part of the string**.
+
+They only help us visualize the zigzag.
+
+---
+
+## Before You Look at the Hints
+
+Try to solve this problem yourself first.
+
+Don't immediately think about the final optimized code.
+
+Start by asking:
+
+> **How would I physically arrange these characters into rows?**
+
+Then ask:
+
+> **Do I actually need to build the entire visual matrix?**
+
+That second question is where the problem becomes much simpler.
+
+---
+<!-- SOLUTION_START -->
+
+## My First Thought
+
+My first instinct was to create a matrix.
+
+That seems natural because the problem literally shows a zigzag:
+
+```text
+P   A   H   N
+A P L S I I G
+Y   I   R
+```
+
+So I could imagine something like:
+
+```text
+row 0
+row 1
+row 2
+```
+
+and then calculate the exact column where every character should go.
+
+But that creates unnecessary work.
+
+I don't actually care about the empty spaces.
+
+I only care about one thing:
+
+> **Which row does each character belong to?**
+
+That changes the way I think about the problem.
+
+---
+
+## The Important Observation
+
+For:
+
+```text
+s = "PAYPALISHIRING"
+numRows = 3
+```
+
+the row numbers follow this pattern:
+
+```text
+0 → 1 → 2 → 1 → 0 → 1 → 2 → 1 → 0 → ...
+```
+
+This is the actual zigzag movement.
+
+The characters are simply assigned according to this sequence.
+
+So instead of constructing:
+
+```text
+P   A   H   N
+A P L S I I G
+Y   I   R
+```
+
+I can think:
+
+```text
+P → row 0
+A → row 1
+Y → row 2
+P → row 1
+A → row 0
+L → row 1
+I → row 2
+S → row 1
+...
+```
+
+Now the problem becomes a simple simulation problem.
+
+---
+
+## Do We Need a Matrix?
+
+No.
+
+This was one of the most important realizations for this problem.
+
+We don't need to know:
+
+```text
+which column?
+how many spaces?
+where is the diagonal?
+```
+
+We only need to know:
+
+```text
+which row?
+```
+
+So instead of a 2D matrix, we can create one string for every row:
+
+```cpp
+vector<string> rows(numRows);
+```
+
+If:
+
+```cpp
+numRows = 3;
+```
+
+then we have:
+
+```text
+rows[0] → ""
+rows[1] → ""
+rows[2] → ""
+```
+
+Think of each string as a bucket.
+
+```text
+Row 0 → characters belonging to row 0
+Row 1 → characters belonging to row 1
+Row 2 → characters belonging to row 2
+```
+
+We don't need to preserve the physical spaces of the zigzag.
+
+---
+
+## The Real Problem: How Do We Move Between Rows?
+
+Now we need to simulate this:
+
+```text
+0 → 1 → 2 → 1 → 0 → 1 → 2 → 1 → ...
+```
+
+We need two pieces of information:
+
+```cpp
+int row = 0;
+int direction = 1;
+```
+
+`row` tells us where we currently are.
+
+`direction` tells us where we are going.
+
+We use:
+
+```text
+direction = 1   → move down
+direction = -1  → move up
+```
+
+So:
+
+```cpp
+row += direction;
+```
+
+means:
+
+> Move one row in the current direction.
+
+---
+
+## Understanding Direction
+
+This is the most important part of the solution.
+
+Suppose we have three rows:
+
+```text
+0
+1
+2
+```
+
+We start at:
+
+```text
+row = 0
+direction = 1
+```
+
+So we move down:
+
+```text
+0 → 1 → 2
+```
+
+But we cannot go below row `2`.
+
+Therefore, when we reach the bottom:
+
+```cpp
+if (row == numRows - 1) {
+    direction = -1;
+}
+```
+
+Now we're moving upward:
+
+```text
+2 → 1 → 0
+```
+
+But we cannot go above row `0`.
+
+So when we reach the top:
+
+```cpp
+if (row == 0) {
+    direction = 1;
+}
+```
+
+Now we move down again:
+
+```text
+0 → 1 → 2
+```
+
+This creates the complete movement:
+
+```text
+0 → 1 → 2 → 1 → 0 → 1 → 2 → 1 → ...
+```
+
+That is the zigzag.
+
+---
+
+## Why `numRows - 1`?
+
+This is an important C++ indexing detail.
+
+If:
+
+```text
+numRows = 3
+```
+
+the valid indexes are:
+
+```text
+0
+1
+2
+```
+
+The last row is therefore:
+
+```cpp
+numRows - 1
+```
+
+because:
+
+```text
+3 - 1 = 2
+```
+
+So:
+
+```cpp
+row == numRows - 1
+```
+
+means:
+
+> We have reached the bottom row.
+
+---
+
+## Walking Through the Characters
+
+Let's use:
+
+```text
+PAYPALISHIRING
+```
+
+with:
+
+```text
+numRows = 3
+```
+
+We start with:
+
+```text
+row = 0
+direction = 1
+```
+
+### Character 1 — `P`
+
+Current row:
+
+```text
+0
+```
+
+So:
+
+```cpp
+rows[0] += 'P';
+```
+
+Now:
+
+```text
+rows[0] → P
+rows[1] →
+rows[2] →
+```
+
+We are at the top, so our direction is down.
+
+Move:
+
+```text
+0 → 1
+```
+
+---
+
+### Character 2 — `A`
+
+Current row:
+
+```text
+1
+```
+
+So:
+
+```cpp
+rows[1] += 'A';
+```
+
+Now:
+
+```text
+rows[0] → P
+rows[1] → A
+rows[2] →
+```
+
+Move:
+
+```text
+1 → 2
+```
+
+---
+
+### Character 3 — `Y`
+
+Current row:
+
+```text
+2
+```
+
+So:
+
+```cpp
+rows[2] += 'Y';
+```
+
+Now:
+
+```text
+rows[0] → P
+rows[1] → A
+rows[2] → Y
+```
+
+We've reached the bottom.
+
+Therefore:
+
+```cpp
+direction = -1;
+```
+
+Now we move upward.
+
+Move:
+
+```text
+2 → 1
+```
+
+---
+
+### Character 4 — `P`
+
+Current row:
+
+```text
+1
+```
+
+So:
+
+```cpp
+rows[1] += 'P';
+```
+
+Now:
+
+```text
+rows[0] → P
+rows[1] → AP
+rows[2] → Y
+```
+
+Move:
+
+```text
+1 → 0
+```
+
+---
+
+### Character 5 — `A`
+
+Current row:
+
+```text
+0
+```
+
+So:
+
+```cpp
+rows[0] += 'A';
+```
+
+Now:
+
+```text
+rows[0] → PA
+rows[1] → AP
+rows[2] → Y
+```
+
+We've reached the top.
+
+So:
+
+```cpp
+direction = 1;
+```
+
+Now we start moving down again.
+
+This process continues for every character.
+
+---
+
+## The Row Movement
+
+For the complete string, the row sequence is:
+
+```text
+Character: P A Y P A L I S H I R I N G
+Row:       0 1 2 1 0 1 2 1 0 1 2 1 0 1
+```
+
+So at the end:
+
+```text
+rows[0] = "PAHN"
+rows[1] = "APLSIIG"
+rows[2] = "YIR"
+```
+
+Notice something important.
+
+We never stored any spaces.
+
+We never created a diagonal.
+
+We never calculated columns.
+
+We simply tracked the current row.
+
+---
+
+## Reading the Rows
+
+The final answer requires reading the rows from top to bottom.
+
+So we have:
+
+```text
+Row 0 → PAHN
+Row 1 → APLSIIG
+Row 2 → YIR
+```
+
+Concatenating them:
+
+```text
+PAHN + APLSIIG + YIR
+```
+
+gives:
+
+```text
+PAHNAPLSIIGYIR
+```
+
+That's our answer.
+
+---
+
+## Step-by-Step Algorithm
+
+The complete algorithm is:
+
+1. Handle the cases where no zigzag is necessary.
+2. Create `numRows` strings.
+3. Start at row `0`.
+4. Start by moving downward.
+5. Process every character in the string.
+6. Add the current character to the current row.
+7. If we reach row `0`, make the direction downward.
+8. If we reach row `numRows - 1`, make the direction upward.
+9. Move to the next row using `row += direction`.
+10. After processing the entire string, concatenate all rows.
+11. Return the result.
+
+---
+
+## C++ Solution
+
+```cpp
+class Solution {
+public:
+    string convert(string s, int numRows) {
+
+        if (numRows == 1 || numRows >= s.length()) {
+            return s;
+        }
+
+        vector<string> rows(numRows);
+
+        int row = 0;
+        int direction = 1;
+
+        for (char c : s) {
+            rows[row] += c;
+
+            if (row == 0) {
+                direction = 1;
+            }
+            else if (row == numRows - 1) {
+                direction = -1;
+            }
+
+            row += direction;
+        }
+
+        string result = "";
+
+        for (string r : rows) {
+            result += r;
+        }
+
+        return result;
+    }
+};
+```
+
+---
+
+## Walking Through the Code
+
+### 1. Function Definition
+
+```cpp
+string convert(string s, int numRows)
+```
+
+The function receives:
+
+```text
+s       → input string
+numRows → number of rows
+```
+
+and returns:
+
+```text
+string
+```
+
+---
+
+### 2. Handle Edge Cases
+
+```cpp
+if (numRows == 1 || numRows >= s.length()) {
+    return s;
+}
+```
+
+If there is only one row, there is no zigzag.
+
+For:
+
+```text
+HELLO
+```
+
+with:
+
+```text
+numRows = 1
+```
+
+the answer is simply:
+
+```text
+HELLO
+```
+
+The same idea applies when there are more rows than characters.
+
+---
+
+### 3. Create the Rows
+
+```cpp
+vector<string> rows(numRows);
+```
+
+This creates `numRows` empty strings.
+
+For three rows:
+
+```text
+rows[0] = ""
+rows[1] = ""
+rows[2] = ""
+```
+
+Each string represents one row.
+
+---
+
+### 4. Track the Current Row
+
+```cpp
+int row = 0;
+```
+
+We start at the first row.
+
+Remember that C++ uses zero-based indexing.
+
+So the first row is:
+
+```text
+row 0
+```
+
+---
+
+### 5. Track Direction
+
+```cpp
+int direction = 1;
+```
+
+We define:
+
+```text
++1 → down
+-1 → up
+```
+
+Therefore, initially:
+
+```text
+direction = 1
+```
+
+means:
+
+> Start by moving down.
+
+---
+
+### 6. Process Every Character
+
+```cpp
+for (char c : s)
+```
+
+This goes through the input string one character at a time.
+
+For:
+
+```text
+PAYPAL
+```
+
+we get:
+
+```text
+P
+A
+Y
+P
+A
+L
+```
+
+---
+
+### 7. Add Character to Current Row
+
+```cpp
+rows[row] += c;
+```
+
+If:
+
+```text
+row = 1
+c = 'P'
+```
+
+then:
+
+```cpp
+rows[1] += 'P';
+```
+
+The character is stored in row `1`.
+
+---
+
+### 8. Detect the Top
+
+```cpp
+if (row == 0) {
+    direction = 1;
+}
+```
+
+If we're at the top row, we must move downward.
+
+---
+
+### 9. Detect the Bottom
+
+```cpp
+else if (row == numRows - 1) {
+    direction = -1;
+}
+```
+
+If we're at the bottom row, we must move upward.
+
+---
+
+### 10. Move
+
+```cpp
+row += direction;
+```
+
+This is where the actual movement happens.
+
+If:
+
+```text
+row = 1
+direction = 1
+```
+
+then:
+
+```text
+row = 2
+```
+
+If:
+
+```text
+row = 2
+direction = -1
+```
+
+then:
+
+```text
+row = 1
+```
+
+This produces:
+
+```text
+0 → 1 → 2 → 1 → 0 → 1 → 2 → ...
+```
+
+---
+
+### 11. Create the Final Result
+
+```cpp
+string result = "";
+```
+
+We create an empty string to store the final answer.
+
+---
+
+### 12. Concatenate Every Row
+
+```cpp
+for (string r : rows) {
+    result += r;
+}
+```
+
+If:
+
+```text
+rows[0] = "PAHN"
+rows[1] = "APLSIIG"
+rows[2] = "YIR"
+```
+
+then:
+
+```text
+result = "PAHNAPLSIIGYIR"
+```
+
+---
+
+### 13. Return
+
+```cpp
+return result;
+```
+
+The completed string is returned.
+
+---
+
+## Why My First Attempt Had a Bug
+
+A common mistake is writing:
+
+```cpp
+vector<string> rows;
+```
+
+This creates an **empty vector**.
+
+It does not create `numRows` strings.
+
+So if we immediately write:
+
+```cpp
+rows[row] += c;
+```
+
+we're trying to access an element that doesn't exist.
+
+The correct version is:
+
+```cpp
+vector<string> rows(numRows);
+```
+
+Now the vector already contains:
+
+```text
+numRows empty strings
+```
+
+This is an important distinction in C++.
+
+```cpp
+vector<string> rows;
+```
+
+means:
+
+> Create an empty vector.
+
+While:
+
+```cpp
+vector<string> rows(numRows);
+```
+
+means:
+
+> Create a vector containing `numRows` default-initialized strings.
+
+---
+
+## Why We Don't Need a Matrix
+
+A matrix would try to preserve the visual layout:
+
+```text
+P . . A . . H . . N
+A P L S I I G
+Y . . I . . R
+```
+
+But those empty positions don't contribute anything to the answer.
+
+The final answer only needs:
+
+```text
+PAHN
+APLSIIG
+YIR
+```
+
+Therefore, storing the characters row by row is enough.
+
+This is an example of simplifying a problem by storing **only the information that actually matters**.
+
+---
+
+## Why Direction Is Better Than Manually Handling the Zigzag
+
+We could try to write separate logic for:
+
+```text
+moving down
+moving diagonally
+moving up
+moving diagonally
+```
+
+But that would make the implementation unnecessarily complicated.
+
+Instead, we reduce the movement to one variable:
+
+```cpp
+int direction;
+```
+
+with only two possible states:
+
+```text
+1  → down
+-1 → up
+```
+
+Then:
+
+```cpp
+row += direction;
+```
+
+handles the movement.
+
+The boundaries decide when the direction changes.
+
+```text
+Top
+ ↓
+ ↓
+Bottom
+ ↑
+ ↑
+Top
+ ↓
+```
+
+This is much easier to reason about.
+
+---
+
+## Common Mistakes
+
+### Mistake 1 — Creating an empty vector
+
+Wrong:
+
+```cpp
+vector<string> rows;
+```
+
+Correct:
+
+```cpp
+vector<string> rows(numRows);
+```
+
+---
+
+### Mistake 2 — Forgetting the one-row case
+
+If:
+
+```text
+numRows = 1
+```
+
+the direction logic doesn't represent a meaningful zigzag.
+
+Handle it first:
+
+```cpp
+if (numRows == 1) {
+    return s;
+}
+```
+
+---
+
+### Mistake 3 — Using `numRows` instead of `numRows - 1`
+
+The last valid row index is:
+
+```cpp
+numRows - 1
+```
+
+not:
+
+```cpp
+numRows
+```
+
+For three rows:
+
+```text
+0
+1
+2
+```
+
+So:
+
+```cpp
+numRows - 1 = 2
+```
+
+---
+
+### Mistake 4 — Thinking the spaces are real characters
+
+The visual representation:
+
+```text
+P   A   H
+A P L S I
+Y   I
+```
+
+doesn't mean we're inserting spaces into the answer.
+
+The spaces are only showing the movement.
+
+---
+
+### Mistake 5 — Trying to calculate columns
+
+You don't need to calculate:
+
+```text
+column = ?
+```
+
+You only need:
+
+```text
+current row
+direction
+```
+
+That is enough to reproduce the zigzag.
+
+---
+
+## Complexity
+
+Let `n` be the length of the string.
+
+### Time Complexity
+
+```text
+O(n)
+```
+
+Every character is processed once.
+
+After that, we concatenate the rows, which together contain exactly `n` characters.
+
+So the overall work is linear.
+
+### Space Complexity
+
+```text
+O(n)
+```
+
+Every character is stored in one of the row strings.
+
+We also use the `rows` vector itself, but the dominant extra space is the `n` characters being stored.
+
+---
+
+## The Pattern
+
+This is fundamentally a **simulation** problem.
+
+The important pattern is:
+
+```text
+Current position
+       ↓
+Current direction
+       ↓
+Move
+       ↓
+Hit boundary?
+   ↙          ↘
+ yes          no
+  ↓            ↓
+reverse      continue
+direction
+```
+
+The general technique is useful whenever something moves back and forth between boundaries.
+
+The key idea is:
+
+> **Instead of constructing the entire visual structure, simulate the movement that produces it.**
+
+---
+
+## What I Want You to Remember
+
+Don't memorize the entire solution.
+
+Remember these four things:
+
+```text
+1. Store one string for each row.
+
+2. Keep track of the current row.
+
+3. Use direction:
+   +1 → down
+   -1 → up
+
+4. Reverse direction at the top and bottom.
+```
+
+The row movement is:
+
+```text
+0 → 1 → 2 → 1 → 0 → 1 → 2 → ...
+```
+
+Once that becomes intuitive, the implementation becomes straightforward.
+
+---
+
+## The Real Learning From This Problem
+
+At first, the problem looks like a matrix problem.
+
+You see:
+
+```text
+P   A   H   N
+A P L S I I G
+Y   I   R
+```
+
+and your first instinct may be:
+
+> "I need to build this matrix."
+
+But then we ask:
+
+> **Do I actually need the matrix?**
+
+No.
+
+We only need to know:
+
+```text
+Which row does each character belong to?
+```
+
+Then we notice:
+
+```text
+0 → 1 → 2 → 1 → 0
+```
+
+and realize that this can be represented using:
+
+```cpp
+row
+direction
+```
+
+That is the real problem-solving lesson.
+
+**Don't always implement the representation shown in the problem.**
+
+Sometimes the visual representation is only there to explain the expected behavior.
+
+Your job is to find the smallest amount of information needed to reproduce that behavior.
+
+---
+
+## Final Takeaway
+
+The complete reasoning can be reduced to:
+
+```text
+Visual Zigzag
+      ↓
+Forget the spaces
+      ↓
+Track only the row
+      ↓
+0 → 1 → 2 → 1 → 0
+      ↓
+Use direction = +1 / -1
+      ↓
+Store characters in row strings
+      ↓
+Concatenate all rows
+      ↓
+O(n) solution
+```
+
+The most important piece of code is:
+
+```cpp
+if (row == 0) {
+    direction = 1;
+}
+else if (row == numRows - 1) {
+    direction = -1;
+}
+
+row += direction;
+```
+
+This tiny piece of logic is what turns ordinary sequential traversal into the zigzag movement.
+
+**Don't memorize the solution.**
+
+**Understand why the direction changes.**
+
+Once you understand that, the rest of the solution follows naturally.
+
+---
+
+## Source
+
+This problem is based on **LeetCode #6 — Zigzag Conversion**.
+
+The problem explanation, examples, and solution presented here are written as educational material for the Elvoret DSA section, with the focus on understanding the reasoning and C++ implementation.
+<!-- SOLUTION_END -->
